@@ -136,11 +136,11 @@ La schermata `/` tiene un `BookQuery` in stato locale; `useBooks(query)` lo pass
 
 ### 5.3 Export (RF8)
 
-`exportLibrary()` legge tutti i libri e i tipi, serializza un `LibraryExport` v1 (tipo e tag per nome, copertine opzionali in base64), scrive `libreria-AAAA-MM-GG.json` nella cache e apre lo share sheet con `expo-sharing`.
+`ExportImportService.exportLibrary()` legge tutti i libri e i tipi, legge le copertine locali in base64 tramite `CoverService`, serializza un `LibraryExport` v1 (tipo e tag per nome) con `buildLibraryExport`, scrive `libreria-AAAA-MM-GG.json` nella cache e apre lo share sheet. Tutto l'accesso a file, condivisione e selettore passa dalla porta `FilePort` (adapter `ExpoFilePort`), così i servizi si testano con un file system in memoria.
 
 ### 5.4 Import (RF9)
 
-`expo-document-picker` → lettura file → `isLibraryExport()` → creazione dei tipi mancanti → `BookRepository.bulkUpsert(books, strategy)` in una sola transazione, con corrispondenza per `id` oppure per `isbn`. Esito riepilogato: inseriti / sostituiti / saltati.
+`pickImportFile()` (selettore → lettura → `parseLibraryExport`) produce un'anteprima con totale, nuovi, esistenti e tipi da creare; l'utente sceglie la strategia; `applyImport()` crea i tipi mancanti, chiama `BookRepository.bulkUpsert(books, strategy)` in una sola transazione (corrispondenza per `id` oppure per `isbn`) e salva le copertine incluse nel file. Esito riepilogato: inseriti / sostituiti / saltati.
 
 ## 6. Gestione errori e offline
 
