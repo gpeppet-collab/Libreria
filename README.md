@@ -42,4 +42,4 @@ Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **developme
 
 ## Stato
 
-Fase di definizione completata: documenti, interfacce TypeScript, schema SQL con migrazione iniziale e schermate stub. Le implementazioni dei repository, dei servizi e delle schermate sono il passo successivo (vedi la tracciabilità in `docs/03-interfacce.md`).
+Definizione completata (documenti, interfacce, schema SQL, schermate stub) e **repository SQLite implementati e testati** (libri con ricerca, filtri, ordinamenti e conteggi; tag con unione in rinomina; tipi di libro). I test dei repository girano su un vero SQLite in memoria tramite `node:sqlite`. Prossimi passi: servizi (metadati, copertine, export/import), hook e schermate (vedi la tracciabilità in `docs/03-interfacce.md`).

@@ -111,12 +111,19 @@ export interface BookTypeRepository {
 }
 ```
 
+Implementazioni: `SqliteBookRepository.ts`, `SqliteTagRepository.ts`, `SqliteBookTypeRepository.ts`, costruite da `createRepositories(db)` (`repositories.ts`, puro) e da `getRepositories()` (`appRepositories.ts`, sul database dell'app). I repository dipendono solo dall'interfaccia `SqlDatabase` (`SqlDatabase.ts`), un sottoinsieme dell'API di expo-sqlite: nei test la stessa interfaccia è implementata sopra `node:sqlite` in memoria.
+
+Estensioni oltre l'interfaccia minima: `SqliteTagRepository.ensure(name)` e `SqliteBookTypeRepository.findByName(name)`, usate dai servizi di import.
+
 Regole comuni:
 
 - `create`/`update` ricevono `tags` come nomi; il repository crea i tag mancanti e aggiorna `book_tags` **nella stessa transazione**.
-- `remove` di un libro elimina anche la copertina locale.
+- `create`/`update` validano e normalizzano i dati (`normalizeNewBook`): titolo obbligatorio, ISBN convertito a 13 cifre, stato e fascia d'età nella lista, tag normalizzati. Errori: `ValidationError`, `InvalidIsbnError`, `DuplicateIsbnError` (con `existingBookId`), `NotFoundError`, `DuplicateNameError`, `BuiltinTypeError` (`errors.ts`).
+- `remove` di un libro notifica `onBookRemoved(book)` (opzione del costruttore): il servizio copertine lo usa per cancellare il file locale. I tag non più usati restano disponibili per l'autocompletamento.
+- `bulkUpsert` abbina per `id` e poi per `isbn`; con `replace` conserva la copertina locale esistente se quella in ingresso è assente; è atomico.
 - `countBy` include sempre il gruppo "non indicato" (`key: null`) se ha almeno un libro.
 - Gli errori SQL si propagano come eccezioni: li gestiscono gli hook, non le schermate.
+- Ordinamento `author` usa il primo autore; `ageRange` segue l'ordine di `AGE_RANGES` con "non indicata" in coda.
 
 ### Accesso al database (`src/data/db.ts`)
 

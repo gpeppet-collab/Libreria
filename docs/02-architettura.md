@@ -117,7 +117,7 @@ La migrazione 1 inserisce anche i tipi predefiniti elencati in `src/domain/bookT
 
 ### Migrazioni
 
-`src/data/migrations.ts` contiene un array ordinato di migrazioni `{ version, statements[] }`. `src/data/db.ts` apre il database una sola volta, legge `MAX(version)` da `schema_migrations` e applica in transazione le migrazioni mancanti. Una migrazione pubblicata non si modifica mai: se ne aggiunge una nuova.
+`src/data/migrations.ts` contiene un array ordinato di migrazioni `{ version, statements[] }`. `src/data/migrate.ts` (`runMigrations`) legge `MAX(version)` da `schema_migrations` e applica in transazione le migrazioni mancanti; `src/data/db.ts` apre il database dell'app una sola volta e la invoca. Una migrazione pubblicata non si modifica mai: se ne aggiunge una nuova.
 
 ## 5. Flussi principali
 
