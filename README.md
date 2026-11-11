@@ -42,4 +42,4 @@ Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **developme
 
 ## Stato
 
-Definizione completata (documenti, interfacce, schema SQL, schermate stub) e **repository SQLite implementati e testati** (libri con ricerca, filtri, ordinamenti e conteggi; tag con unione in rinomina; tipi di libro). I test dei repository girano su un vero SQLite in memoria tramite `node:sqlite`. Prossimi passi: servizi (metadati, copertine, export/import), hook e schermate (vedi la tracciabilità in `docs/03-interfacce.md`).
+Definizione completata (documenti, interfacce, schema SQL, schermate stub) e **repository SQLite implementati e testati** (libri con ricerca, filtri, ordinamenti e conteggi; tag con unione in rinomina; tipi di libro). I test dei repository girano su un vero SQLite in memoria tramite `node:sqlite`. Servizio metadati implementato (Google Books con fallback Open Library, timeout, offline-safe, tag suggeriti). Prossimi passi: servizi copertine ed export/import, hook e schermate (vedi la tracciabilità in `docs/03-interfacce.md`).

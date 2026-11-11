@@ -167,6 +167,8 @@ export interface MetadataService {
 
 Timeout complessivo: `METADATA_LOOKUP_TIMEOUT_MS = 5000`. Ordine: Google Books, poi Open Library.
 
+Implementazioni: `GoogleBooksProvider.ts`, `OpenLibraryProvider.ts` (ricevono `fetch` iniettabile), `MetadataService.ts` (`FallbackMetadataService`: normalizza l'ISBN, verifica `isOnline`, prova i provider in ordine con un solo `AbortController` e timeout complessivo, registra gli errori con `onError` e restituisce sempre `null` in caso di problemi). `appMetadataService.ts` espone `getMetadataService()` cablato con NetInfo. `toBook.ts` (`metadataToBookFields`) converte il risultato nei soli campi bibliografici del form; i `suggestedTags` restano separati per la scelta dell'utente (RF15). Le categorie gerarchiche ("Juvenile Fiction / Animals") vengono spezzate e normalizzate in tag (massimo 10).
+
 ## 5. Formato export/import (`src/domain/export.ts`)
 
 ```ts
