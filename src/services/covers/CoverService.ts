@@ -23,6 +23,12 @@ export class CoverService {
     this.onError = options.onError ?? (() => {});
   }
 
+  /** URI da passare a `<Image>` per una copertina salvata. */
+  displayUri(path: string | null): string | null {
+    if (!path) return null;
+    return this.files.displayUri ? this.files.displayUri(path) : path;
+  }
+
   pathFor(bookId: string): string {
     return joinUri(this.directory, `${bookId}.jpg`);
   }

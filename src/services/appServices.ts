@@ -3,7 +3,7 @@ import type { Repositories } from '@/data/repositories';
 
 import { CoverService } from './covers/CoverService';
 import { ExportImportService } from './exportImport/ExportImportService';
-import { ExpoFilePort } from './files/ExpoFilePort';
+import { createFilePort } from './files/createFilePort';
 import { getMetadataService } from './metadata/appMetadataService';
 import type { MetadataService } from './metadata/MetadataProvider';
 
@@ -23,7 +23,7 @@ let instance: Promise<AppServices> | null = null;
 export function getAppServices(): Promise<AppServices> {
   if (!instance) {
     instance = (async () => {
-      const files = new ExpoFilePort();
+      const files = createFilePort();
       const covers = new CoverService(files, {
         onError: (err) => {
           if (__DEV__) console.warn('[covers]', err);

@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": ["android"],
+    "platforms": ["android", "web"],
     "android": {
       "package": "it.libreria.app",
       "adaptiveIcon": {
@@ -32,6 +32,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }

@@ -40,6 +40,17 @@ npx expo run:android   # build e installazione su dispositivo/emulatore Android
 
 Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **development build** (`npx expo run:android` oppure EAS Build); Expo Go può non bastare. Per un APK installabile: `npx eas-cli build -p android --profile preview`.
 
+## Anteprima web
+
+Per provare l'interfaccia senza telefono, in due terminali:
+
+```bash
+npm run web           # server di sviluppo Expo sulla porta 8081
+npm run web:preview   # proxy con le intestazioni di isolamento → http://localhost:8082
+```
+
+Il proxy serve perché expo-sqlite sul web usa SharedArrayBuffer, che richiede le intestazioni COOP/COEP. Sul web i file passano da un adapter per browser: le copertine scaricate restano URL remoti, l'export scarica il file JSON e l'import usa il selettore del browser. Lo scanner non è disponibile: si inserisce l'ISBN a mano e si usa "Cerca online".
+
 ## Stato
 
 Prima versione funzionante completa:

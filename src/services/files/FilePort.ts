@@ -28,6 +28,11 @@ export interface FilePort {
   share(uri: string, mimeType: string): Promise<void>;
   /** Apre il selettore di file. `null` se l'utente annulla. */
   pickFile(mimeTypes: string[]): Promise<PickedFile | null>;
+  /**
+   * URI utilizzabile da `<Image>` per un file salvato. Facoltativo: se assente si usa l'URI stesso
+   * (vero su Android; sul web i file non hanno un URI visualizzabile).
+   */
+  displayUri?(uri: string): string | null;
 }
 
 export function joinUri(directory: string, name: string): string {

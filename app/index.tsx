@@ -24,7 +24,7 @@ const SORT_OPTIONS = (['title', 'author', 'createdAt', 'ageRange'] as const).map
 
 /** Lista libri (RF6): ricerca, filtri combinabili, ordinamento. */
 export default function BookListScreen() {
-  const { spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const params = useLocalSearchParams<Record<string, string>>();
   const [query, setQuery] = useState<BookQuery>(() => parseBookQueryParams(params));
   const [showFilters, setShowFilters] = useState(false);
@@ -105,7 +105,7 @@ export default function BookListScreen() {
         )}
         contentContainerStyle={{
           paddingHorizontal: spacing.lg,
-          paddingBottom: 96,
+          paddingBottom: spacing.lg,
           gap: spacing.sm,
         }}
         ListEmptyComponent={
@@ -119,27 +119,46 @@ export default function BookListScreen() {
         onRefresh={() => books.refetch()}
       />
 
-      <View style={[styles.fab, { padding: spacing.lg, gap: spacing.sm }]}>
+      <View
+        style={[
+          styles.bar,
+          {
+            padding: spacing.md,
+            gap: spacing.sm,
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
         <Row>
-          <Button
-            title={t.list.groups}
-            variant="secondary"
-            compact
-            onPress={() => router.push('/groups')}
-          />
-          <Button
-            title={t.list.settings}
-            variant="secondary"
-            compact
-            onPress={() => router.push('/settings')}
-          />
-          <View style={styles.spacer} />
-          <Button
-            title={t.list.manual}
-            variant="secondary"
-            onPress={() => router.push('/book/new')}
-          />
-          <Button title={t.list.scan} onPress={() => router.push('/scan')} />
+          <View style={styles.flex}>
+            <Button
+              title={t.list.groups}
+              variant="ghost"
+              compact
+              onPress={() => router.push('/groups')}
+            />
+          </View>
+          <View style={styles.flex}>
+            <Button
+              title={t.list.settings}
+              variant="ghost"
+              compact
+              onPress={() => router.push('/settings')}
+            />
+          </View>
+        </Row>
+        <Row>
+          <View style={styles.flex}>
+            <Button
+              title={t.list.manual}
+              variant="secondary"
+              onPress={() => router.push('/book/new')}
+            />
+          </View>
+          <View style={styles.flex}>
+            <Button title={t.list.scan} onPress={() => router.push('/scan')} />
+          </View>
         </Row>
       </View>
     </Screen>
@@ -148,5 +167,6 @@ export default function BookListScreen() {
 
 const styles = StyleSheet.create({
   spacer: { flex: 1 },
-  fab: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  flex: { flex: 1 },
+  bar: { borderTopWidth: StyleSheet.hairlineWidth },
 });

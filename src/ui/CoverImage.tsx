@@ -1,5 +1,7 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
+import { useServices } from '@/hooks/ServicesContext';
+
 import { useTheme } from './theme';
 
 interface CoverImageProps {
@@ -11,11 +13,13 @@ interface CoverImageProps {
 /** Copertina locale con segnaposto (iniziale del titolo) se assente. */
 export function CoverImage({ path, title, width = 56 }: CoverImageProps) {
   const { colors, radius } = useTheme();
+  const { covers } = useServices();
   const height = Math.round(width * 1.45);
-  if (path) {
+  const uri = covers.displayUri(path);
+  if (uri) {
     return (
       <Image
-        source={{ uri: path }}
+        source={{ uri }}
         style={{ width, height, borderRadius: radius.sm }}
         resizeMode="cover"
         accessibilityLabel={`Copertina di ${title}`}

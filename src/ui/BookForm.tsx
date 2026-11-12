@@ -279,7 +279,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
         />
         <AppText variant="label">{t.form.rating}</AppText>
         <RatingStars value={form.rating} onChange={(v) => set('rating', v)} size={28} />
-        <Row>
+        <Row style={{ alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
             <Field
               label={t.form.startedAt}
@@ -296,7 +296,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
             onPress={() => set('startedAt', today())}
           />
         </Row>
-        <Row>
+        <Row style={{ alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
             <Field
               label={t.form.finishedAt}
