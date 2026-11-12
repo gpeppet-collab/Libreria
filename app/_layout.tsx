@@ -2,50 +2,67 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { getDatabase } from '@/data/db';
+import { ServicesProvider } from '@/hooks/ServicesContext';
+import { t } from '@/i18n/it';
+import { getAppServices, type AppServices } from '@/services/appServices';
+import { useTheme } from '@/ui/theme';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 5_000 } },
+});
 
 export default function RootLayout() {
-  const [dbState, setDbState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [dbError, setDbError] = useState<string | null>(null);
+  const theme = useTheme();
+  const [services, setServices] = useState<AppServices | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getDatabase()
-      .then(() => setDbState('ready'))
-      .catch((err: unknown) => {
-        setDbError(err instanceof Error ? err.message : String(err));
-        setDbState('error');
-      });
+    getAppServices()
+      .then(setServices)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
 
-  if (dbState !== 'ready') {
+  if (!services) {
     return (
-      <View style={styles.center}>
-        <Text>
-          {dbState === 'loading' ? 'Apertura del catalogo…' : `Errore database: ${dbError}`}
-        </Text>
+      <View style={[styles.center, { backgroundColor: theme.colors.background }]}>
+        {error ? (
+          <Text style={{ color: theme.colors.danger }}>{`${t.common.error}: ${error}`}</Text>
+        ) : (
+          <ActivityIndicator color={theme.colors.primary} />
+        )}
       </View>
     );
   }
 
+  const headerOptions = {
+    headerStyle: { backgroundColor: theme.colors.surface },
+    headerTintColor: theme.colors.text,
+    headerTitleStyle: { color: theme.colors.text },
+    contentStyle: { backgroundColor: theme.colors.background },
+  };
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen name="index" options={{ title: 'Libreria' }} />
-        <Stack.Screen name="groups" options={{ title: 'Per gruppo' }} />
-        <Stack.Screen name="scan" options={{ title: 'Scansiona ISBN' }} />
-        <Stack.Screen name="book/new" options={{ title: 'Nuovo libro' }} />
-        <Stack.Screen name="book/[id]/index" options={{ title: 'Dettaglio' }} />
-        <Stack.Screen name="book/[id]/edit" options={{ title: 'Modifica libro' }} />
-        <Stack.Screen name="settings/index" options={{ title: 'Impostazioni' }} />
-        <Stack.Screen name="settings/tags" options={{ title: 'Tag' }} />
-        <Stack.Screen name="settings/types" options={{ title: 'Tipi di libro' }} />
-      </Stack>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ServicesProvider services={services}>
+          <StatusBar style={theme.dark ? 'light' : 'dark'} />
+          <Stack screenOptions={headerOptions}>
+            <Stack.Screen name="index" options={{ title: t.list.title }} />
+            <Stack.Screen name="groups" options={{ title: t.groups.title }} />
+            <Stack.Screen name="scan" options={{ title: t.scan.title }} />
+            <Stack.Screen name="book/new" options={{ title: t.form.newTitle }} />
+            <Stack.Screen name="book/[id]/index" options={{ title: t.detail.title }} />
+            <Stack.Screen name="book/[id]/edit" options={{ title: t.form.editTitle }} />
+            <Stack.Screen name="settings/index" options={{ title: t.settings.title }} />
+            <Stack.Screen name="settings/tags" options={{ title: t.tags.title }} />
+            <Stack.Screen name="settings/types" options={{ title: t.types.title }} />
+          </Stack>
+        </ServicesProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 

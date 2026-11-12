@@ -203,7 +203,9 @@ Nome file: `libreria-AAAA-MM-GG.json`. In import la corrispondenza è per `id`, 
 | `/settings/tags`  | `app/settings/tags.tsx`   | Tag               | lista con conteggi, rinomina, elimina                                                                    |
 | `/settings/types` | `app/settings/types.tsx`  | Tipi di libro     | aggiungi, rinomina, elimina (non builtin)                                                                |
 
-Parametri di navigazione: `/book/new?isbn=9780306406157`; `/?ageRange=3-5&bookTypeId=albo_illustrato&tags=buonanotte`.
+Hook (`src/hooks/`): `useBooks(query)`, `useBook(id)`, `useBookCount()`, `useGroupCounts(field)`, `useBookMutations()` (create/update/remove; la copertina si scarica dopo il salvataggio), `useTags()`, `useTagSuggestions(prefix)`, `useTagMutations()`, `useBookTypes()` (con `nameById`), `useBookTypeMutations()`, `useMetadataLookup()`, `useExportImport()`. Le chiavi di cache sono in `queryKeys.ts`; ogni mutazione invalida libri, tag e tipi coinvolti.
+
+Parametri di navigazione (convertiti da `parseBookQueryParams` / `bookQueryToParams` in `src/domain/bookQueryParams.ts`): `/book/new?isbn=9780306406157`; `/?ageRange=3-5&bookTypeId=albo_illustrato&tags=buonanotte`.
 
 ## 7. Tracciabilità requisiti → interfacce
 

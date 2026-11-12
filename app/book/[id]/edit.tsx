@@ -1,15 +1,35 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 
-/** form modifica libro (RF7) */
+import { useBook, useBookMutations } from '@/hooks/useBooks';
+import { t } from '@/i18n/it';
+import { BookForm } from '@/ui/BookForm';
+import { EmptyState } from '@/ui/EmptyState';
+import { ScrollScreen } from '@/ui/Themed';
+
+/** Modifica libro (RF7). */
 export default function EditBookScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const book = useBook(id);
+  const { update } = useBookMutations();
+
+  if (book.isLoading) return <ScrollScreen />;
+  if (!book.data) {
+    return (
+      <ScrollScreen>
+        <EmptyState title={t.detail.notFound} />
+      </ScrollScreen>
+    );
+  }
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Da implementare: form modifica libro (RF7)</Text>
-    </View>
+    <ScrollScreen>
+      <BookForm
+        initial={book.data}
+        submitting={update.isPending}
+        error={update.error}
+        onSubmit={({ book: patch, coverUrl }) =>
+          update.mutate({ id: book.data!.id, patch, coverUrl }, { onSuccess: () => router.back() })
+        }
+      />
+    </ScrollScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  text: { textAlign: 'center', opacity: 0.7 },
-});

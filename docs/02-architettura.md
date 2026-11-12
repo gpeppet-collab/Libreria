@@ -44,11 +44,12 @@ Libreria è un'app **Android**, **locale**, **a singolo utente**. Non c'è backe
 
 ```
 app/            schermate: solo UI e navigazione, nessun SQL, nessun fetch
-src/hooks/      collegano schermate a repository e servizi (TanStack Query)
+src/hooks/      collegano schermate a repository e servizi (TanStack Query); i servizi arrivano da `ServicesProvider`
 src/services/   metadata (provider + fallback), covers, exportImport, scanner
 src/data/       db.ts (apertura + migrazioni), repository SQLite
 src/domain/     tipi, costanti e regole pure (ISBN, tag, formato export)
-src/ui/         componenti riusabili senza accesso ai dati
+src/ui/         componenti riusabili e tema (chiaro/scuro); i componenti di form usano gli hook
+src/i18n/       stringhe dell'interfaccia in italiano
 ```
 
 **Regola:** `app → hooks → services | data → domain`. Il livello `domain` non importa nulla da React, React Native o Expo (vincolo applicato da ESLint in `eslint.config.js`), quindi è testabile in puro Node. Le schermate non toccano mai direttamente SQLite o `fetch`.

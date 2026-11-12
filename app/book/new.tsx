@@ -1,17 +1,26 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 
-/** form nuovo libro, precompilabile da ?isbn= (RF1, RF3) */
+import { useBookMutations } from '@/hooks/useBooks';
+import { BookForm } from '@/ui/BookForm';
+import { ScrollScreen } from '@/ui/Themed';
+
+/** Nuovo libro (RF1, RF3): precompilabile da `?isbn=` (scansione). */
 export default function NewBookScreen() {
+  const { isbn } = useLocalSearchParams<{ isbn?: string }>();
+  const { create } = useBookMutations();
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>
-        Da implementare: form nuovo libro, precompilabile da ?isbn= (RF1, RF3)
-      </Text>
-    </View>
+    <ScrollScreen>
+      <BookForm
+        initialIsbn={isbn}
+        submitting={create.isPending}
+        error={create.error}
+        onSubmit={({ book, coverUrl }) =>
+          create.mutate(
+            { book, coverUrl },
+            { onSuccess: (created) => router.replace(`/book/${created.id}`) },
+          )
+        }
+      />
+    </ScrollScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  text: { textAlign: 'center', opacity: 0.7 },
-});

@@ -42,4 +42,11 @@ Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **developme
 
 ## Stato
 
-Definizione completata (documenti, interfacce, schema SQL, schermate stub) e **repository SQLite implementati e testati** (libri con ricerca, filtri, ordinamenti e conteggi; tag con unione in rinomina; tipi di libro). I test dei repository girano su un vero SQLite in memoria tramite `node:sqlite`. Servizio metadati implementato (Google Books con fallback Open Library, timeout, offline-safe, tag suggeriti). Servizi copertine (download e salvataggio locale) ed export/import (JSON con anteprima e strategie di unione) implementati sopra una porta file system testabile in memoria. Prossimi passi: hook e schermate (vedi la tracciabilità in `docs/03-interfacce.md`).
+Prima versione funzionante completa:
+
+- **Dati**: repository SQLite con migrazioni, ricerca, filtri, ordinamenti e conteggi.
+- **Servizi**: metadati online (Google Books con fallback Open Library), copertine locali, export/import JSON.
+- **Interfaccia**: lista con ricerca, filtri per stato, fascia d'età, tipo e tag e ordinamento; vista per gruppo; scanner ISBN con controllo duplicati; form con ricerca online, classificazione e tag suggeriti; dettaglio con cambio rapido di stato e stelle; impostazioni con export/import e gestione di tag e tipi. Tema chiaro e scuro.
+- **Test**: dominio, dati e servizi su SQLite reale in memoria; componenti e schermate con React Native Testing Library.
+
+Da provare su un telefono reale: fotocamera, condivisione e selettore file, chiamate reali alle API dei metadati.
