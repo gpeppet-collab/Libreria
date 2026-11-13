@@ -40,6 +40,16 @@ npx expo run:android   # build e installazione su dispositivo/emulatore Android
 
 Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **development build** (`npx expo run:android` oppure EAS Build); Expo Go può non bastare. Per un APK installabile: `npx eas-cli build -p android --profile preview`.
 
+## Generare l'APK (gratis, anche dal telefono)
+
+Il flusso GitHub Actions `.github/workflows/android-apk.yml` compila l'APK sui server di GitHub, senza EAS né Android Studio:
+
+1. su GitHub apri la scheda **Actions**, scegli **APK Android** e premi **Run workflow**;
+2. a esecuzione finita (circa 15-20 minuti) apri l'esecuzione e scarica **libreria-apk** dalla sezione Artifacts;
+3. estrai lo zip e installa il file `.apk`, consentendo l'installazione da origini sconosciute.
+
+L'APK è firmato con la chiave di debug: va bene per il proprio telefono, non per il Play Store.
+
 ## Anteprima web
 
 Per provare l'interfaccia senza telefono, in due terminali:

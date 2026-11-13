@@ -1,0 +1,60 @@
+name: APK Android
+
+# Avvio manuale: scheda Actions → "APK Android" → Run workflow.
+# Compila l'APK sui server di GitHub (nessun account Expo/EAS) e lo allega all'esecuzione.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compila APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Controlli (typecheck e test)
+        run: npm run typecheck && npm test
+
+      - name: Genera il progetto Android
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compila l'APK
+        working-directory: android
+        # Solo le architetture dei telefoni reali: APK più piccolo e build più veloce.
+        # La build release è firmata con la chiave di debug del template Expo:
+        # installabile sul proprio telefono, non pubblicabile sul Play Store.
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Rinomina l'APK
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          mv android/app/build/outputs/apk/release/app-release.apk "libreria-$VERSION-${GITHUB_RUN_NUMBER}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libreria-apk
+          path: libreria-*.apk
+          if-no-files-found: error
+          retention-days: 30
