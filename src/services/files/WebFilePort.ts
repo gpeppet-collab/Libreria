@@ -1,4 +1,4 @@
-import type { FilePort, PickedFile } from './FilePort';
+import type { FilePort, ImageSource, PickedFile } from './FilePort';
 
 /** Contenuto di un "file" sul web: testo, base64, oppure riferimento a un URL remoto (copertine). */
 type Entry =
@@ -94,6 +94,32 @@ export class WebFilePort implements FilePort {
       input.oncancel = () => resolve(null);
       input.click();
     });
+  }
+
+  /** Sul web non c'è distinzione tra fotocamera e galleria: decide il browser. */
+  pickImage(_source: ImageSource): Promise<PickedFile | null> {
+    return new Promise((resolve, reject) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return resolve(null);
+        try {
+          const uri = `${this.cacheDirectory}image-${Date.now()}-${file.name}`;
+          this.files.set(uri, { kind: 'base64', value: await blobToBase64(file) });
+          resolve({ uri, name: file.name });
+        } catch (err) {
+          reject(err);
+        }
+      };
+      input.oncancel = () => resolve(null);
+      input.click();
+    });
+  }
+
+  async copy(sourceUri: string, destinationUri: string): Promise<void> {
+    this.set(destinationUri, this.get(sourceUri), true);
   }
 
   displayUri(uri: string): string | null {

@@ -1,4 +1,4 @@
-import { joinUri, type FilePort } from '../files/FilePort';
+import { joinUri, type FilePort, type ImageSource } from '../files/FilePort';
 
 export const COVERS_DIR_NAME = 'covers';
 
@@ -63,6 +63,37 @@ export class CoverService {
     }
     // L'ultimo candidato è spesso un tentativo "alla cieca": come remoto si usa solo il primo.
     return allowRemote && urls.length > 1 ? (urls[0] ?? null) : null;
+  }
+
+  /** Fa scattare o scegliere un'immagine. Restituisce un URI temporaneo, oppure null. */
+  async pickImage(source: ImageSource): Promise<string | null> {
+    try {
+      return (await this.files.pickImage(source))?.uri ?? null;
+    } catch (err) {
+      this.onError(err);
+      return null;
+    }
+  }
+
+  /**
+   * Salva come copertina del libro un'immagine scelta dall'utente ed elimina la precedente.
+   * Il nome contiene un timestamp: così `<Image>` non mostra dalla cache la copertina vecchia.
+   */
+  async storeFromFile(
+    sourceUri: string,
+    bookId: string,
+    previousPath: string | null = null,
+  ): Promise<string | null> {
+    const dest = joinUri(this.directory, `${bookId}-${Date.now()}.jpg`);
+    try {
+      await this.files.ensureDirectory(this.directory);
+      await this.files.copy(sourceUri, dest);
+      if (previousPath !== dest) await this.remove(previousPath);
+      return dest;
+    } catch (err) {
+      this.onError(err);
+      return null;
+    }
   }
 
   /** Salva una copertina ricevuta in base64 (import) e restituisce il path locale, oppure null. */

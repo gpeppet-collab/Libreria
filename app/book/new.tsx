@@ -14,9 +14,9 @@ export default function NewBookScreen() {
         initialIsbn={isbn}
         submitting={create.isPending}
         error={create.error}
-        onSubmit={({ book, coverUrls }) =>
+        onSubmit={({ book, coverUrls, coverFileUri }) =>
           create.mutate(
-            { book, coverUrls },
+            { book, coverUrls, coverFileUri },
             { onSuccess: (created) => router.replace(`/book/${created.id}`) },
           )
         }

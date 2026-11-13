@@ -1,8 +1,9 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { Directory, File, Paths } from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 
-import type { FilePort, PickedFile } from './FilePort';
+import type { FilePort, ImageSource, PickedFile } from './FilePort';
 
 const MIN_IMAGE_BYTES = 1024;
 
@@ -75,6 +76,31 @@ export class ExpoFilePort implements FilePort {
     });
     const asset = res.canceled ? undefined : res.assets[0];
     return asset ? { uri: asset.uri, name: asset.name } : null;
+  }
+
+  async pickImage(source: ImageSource): Promise<PickedFile | null> {
+    // Ritaglio in proporzione copertina e compressione: file piccoli, lista veloce.
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [2, 3],
+      quality: 0.6,
+    };
+    if (source === 'camera') {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) return null;
+    }
+    const res =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+    const asset = res.canceled ? undefined : res.assets[0];
+    return asset ? { uri: asset.uri, name: asset.fileName ?? 'copertina.jpg' } : null;
+  }
+
+  async copy(sourceUri: string, destinationUri: string): Promise<void> {
+    await this.deleteFile(destinationUri);
+    await new File(sourceUri).copy(new File(destinationUri));
   }
 }
 

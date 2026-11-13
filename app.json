@@ -2,7 +2,7 @@
   "expo": {
     "name": "Libreria",
     "slug": "libreria",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "scheme": "libreria",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,6 +27,14 @@
         "expo-camera",
         {
           "cameraPermission": "Libreria usa la fotocamera per leggere il codice a barre ISBN dei libri."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Libreria usa la fotocamera per fotografare la copertina dei libri.",
+          "photosPermission": "Libreria accede alle foto per scegliere la copertina dei libri.",
+          "microphonePermission": false
         }
       ]
     ],

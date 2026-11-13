@@ -124,4 +124,28 @@ describe('BookForm', () => {
     await fireEvent.changeText(screen.getByLabelText(t.form.tags), 'din');
     await waitFor(() => expect(screen.getByText('dinosauri (1)')).toBeTruthy());
   });
+
+  it('permette di scegliere una foto come copertina, che prevale su quelle online', async () => {
+    ctx.metadata.set(ISBN, {
+      isbn: ISBN,
+      title: 'T',
+      authors: [],
+      coverUrl: 'https://example.org/c.jpg',
+      source: 'sbn',
+    });
+    ctx.files.files.set('file:///app/cache/foto.jpg', 'FOTO');
+    ctx.files.nextImage = { uri: 'file:///app/cache/foto.jpg', name: 'foto.jpg' };
+    const onSubmit = jest.fn<void, [BookFormResult]>();
+    await renderWithServices(<BookForm initialIsbn={ISBN} onSubmit={onSubmit} />, ctx.services);
+    expect(await screen.findByText(t.form.coverWillDownload)).toBeTruthy();
+
+    await fireEvent.press(screen.getByText(t.form.coverCamera));
+    expect(await screen.findByText(t.form.coverRemove)).toBeTruthy();
+    expect(screen.queryByText(t.form.coverWillDownload)).toBeNull();
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+      coverFileUri: 'file:///app/cache/foto.jpg',
+      coverUrls: undefined,
+    });
+  });
 });

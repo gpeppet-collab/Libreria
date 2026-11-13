@@ -8,6 +8,8 @@ export interface PickedFile {
   name: string;
 }
 
+export type ImageSource = 'camera' | 'library';
+
 export interface FilePort {
   /** Cartella persistente dell'app (sopravvive ai riavvii). */
   readonly documentDirectory: string;
@@ -28,6 +30,10 @@ export interface FilePort {
   share(uri: string, mimeType: string): Promise<void>;
   /** Apre il selettore di file. `null` se l'utente annulla. */
   pickFile(mimeTypes: string[]): Promise<PickedFile | null>;
+  /** Scatta una foto o sceglie un'immagine dalla galleria. `null` se l'utente annulla o nega il permesso. */
+  pickImage(source: ImageSource): Promise<PickedFile | null>;
+  /** Copia un file (anche un URI restituito da `pickImage`) in `destinationUri`, sovrascrivendo. */
+  copy(sourceUri: string, destinationUri: string): Promise<void>;
   /**
    * URI utilizzabile da `<Image>` per un file salvato. Facoltativo: se assente si usa l'URI stesso
    * (vero su Android; sul web i file non hanno un URI visualizzabile).

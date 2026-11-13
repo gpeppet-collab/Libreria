@@ -14,6 +14,7 @@ import {
   type ReadingStatus,
 } from '@/domain/types';
 import { useBookTypes } from '@/hooks/useBookTypes';
+import { useServices } from '@/hooks/ServicesContext';
 import { useMetadataLookup } from '@/hooks/useMetadataLookup';
 import { t } from '@/i18n/it';
 import type { LookupResult } from '@/services/metadata/MetadataProvider';
@@ -21,6 +22,7 @@ import { metadataToBookFields } from '@/services/metadata/toBook';
 
 import { Button } from './Button';
 import { ChipGroup } from './Chip';
+import { CoverImage } from './CoverImage';
 import { ErrorBanner } from './ErrorBanner';
 import { Field } from './Field';
 import { RatingStars } from './RatingStars';
@@ -32,6 +34,8 @@ export interface BookFormResult {
   book: NewBook;
   /** Copertine candidate da scaricare (dai metadati), se il libro non ne ha una. */
   coverUrls?: string[];
+  /** Immagine scelta dall'utente (foto o galleria), da salvare come copertina. */
+  coverFileUri?: string;
 }
 
 interface BookFormProps {
@@ -104,6 +108,9 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   const [form, setForm] = useState<FormState>(() => fromBook(initial, initialIsbn));
   const [touched, setTouched] = useState(false);
   const [coverUrls, setCoverUrls] = useState<string[]>([]);
+  const [coverFileUri, setCoverFileUri] = useState<string | null>(null);
+  const [removeCover, setRemoveCover] = useState(false);
+  const { covers } = useServices();
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const bookTypes = useBookTypes();
   const lookup = useMetadataLookup();
@@ -172,7 +179,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       publishedYear: form.publishedYear ? Number(form.publishedYear) : null,
       pageCount: form.pageCount ? Number(form.pageCount) : null,
       description: form.description || null,
-      coverPath: initial?.coverPath ?? null,
+      coverPath: removeCover ? null : (initial?.coverPath ?? null),
       status: form.status,
       rating: form.rating,
       notes: form.notes || null,
@@ -182,8 +189,21 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       bookTypeId: form.bookTypeId,
       tags: form.tags,
     };
-    onSubmit({ book, coverUrls: coverUrls.length ? coverUrls : undefined });
+    onSubmit({
+      book,
+      coverUrls: coverUrls.length && !coverFileUri ? coverUrls : undefined,
+      coverFileUri: coverFileUri ?? undefined,
+    });
   };
+
+  const pickCover = async (source: 'camera' | 'library') => {
+    const uri = await covers.pickImage(source);
+    if (uri) {
+      setCoverFileUri(uri);
+      setRemoveCover(false);
+    }
+  };
+  const currentCover = removeCover ? null : (initial?.coverPath ?? null);
 
   const today = () => new Date().toISOString().slice(0, 10);
 
@@ -215,7 +235,6 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
             </AppText>
           ) : null}
         </Row>
-        {coverUrls.length ? <AppText variant="small">{t.form.coverWillDownload}</AppText> : null}
         <Field
           label={t.form.title}
           value={form.title}
@@ -260,6 +279,42 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
           onChangeText={(v) => set('description', v)}
           multiline
         />
+      </Card>
+
+      <Card>
+        <AppText variant="heading">{t.form.cover}</AppText>
+        <Row style={{ alignItems: 'flex-start' }}>
+          <CoverImage path={currentCover} previewUri={coverFileUri} title={form.title} width={84} />
+          <View style={{ flex: 1, gap: spacing.sm }}>
+            <Button
+              title={t.form.coverCamera}
+              variant="secondary"
+              compact
+              onPress={() => pickCover('camera')}
+            />
+            <Button
+              title={t.form.coverLibrary}
+              variant="secondary"
+              compact
+              onPress={() => pickCover('library')}
+            />
+            {coverFileUri || currentCover ? (
+              <Button
+                title={t.form.coverRemove}
+                variant="ghost"
+                compact
+                onPress={() => {
+                  setCoverFileUri(null);
+                  setRemoveCover(true);
+                  setCoverUrls([]);
+                }}
+              />
+            ) : null}
+          </View>
+        </Row>
+        {coverUrls.length && !coverFileUri && !currentCover ? (
+          <AppText variant="small">{t.form.coverWillDownload}</AppText>
+        ) : null}
       </Card>
 
       <Card>

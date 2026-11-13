@@ -50,6 +50,15 @@ export class MemoryFilePort implements FilePort {
     return this.nextPick;
   }
 
+  /** Immagine che `pickImage` restituirà (null = annullato). */
+  nextImage: PickedFile | null = null;
+  async pickImage(): Promise<PickedFile | null> {
+    return this.nextImage;
+  }
+  async copy(sourceUri: string, destinationUri: string): Promise<void> {
+    this.write(destinationUri, await this.readText(sourceUri));
+  }
+
   /** Aggiunge un file nella cache come se l'utente lo avesse scelto. */
   stagePick(name: string, content: string): PickedFile {
     const uri = joinUri(this.cacheDirectory, `picked-${name}`);

@@ -104,6 +104,10 @@ export const t = {
     notes: 'Note',
     duplicateIsbn: 'Esiste già un libro con questo ISBN',
     invalidIsbn: 'ISBN non valido',
+    cover: 'Copertina',
+    coverCamera: 'Scatta foto',
+    coverLibrary: 'Scegli dalla galleria',
+    coverRemove: 'Rimuovi copertina',
     coverWillDownload: 'La copertina verrà scaricata al salvataggio',
   },
   detail: {

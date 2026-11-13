@@ -7,16 +7,18 @@ import { useTheme } from './theme';
 
 interface CoverImageProps {
   path: string | null;
+  /** Immagine appena scelta e non ancora salvata: se presente ha la precedenza. */
+  previewUri?: string | null;
   title: string;
   width?: number;
 }
 
 /** Copertina locale con segnaposto (iniziale del titolo) se assente. */
-export function CoverImage({ path, title, width = 56 }: CoverImageProps) {
+export function CoverImage({ path, previewUri, title, width = 56 }: CoverImageProps) {
   const { colors, radius } = useTheme();
   const { covers } = useServices();
   const height = Math.round(width * 1.45);
-  const uri = covers.displayUri(path);
+  const uri = previewUri ? (covers.displayUri(previewUri) ?? previewUri) : covers.displayUri(path);
   // Se l'immagine non si carica (file mancante, URL remoto senza rete) si mostra il segnaposto.
   const [failedUri, setFailedUri] = useState<string | null>(null);
   if (uri && uri !== failedUri) {

@@ -46,6 +46,23 @@ describe('CoverService', () => {
     expect(await covers.downloadFirst([], 'book-13')).toBeNull();
   });
 
+  it('salva un immagine scelta dall utente con nome unico ed elimina la precedente', async () => {
+    const old = (await covers.storeBase64('VECCHIA', 'book-20'))!;
+    files.files.set('file:///app/cache/foto.jpg', 'FOTO');
+    files.nextImage = { uri: 'file:///app/cache/foto.jpg', name: 'foto.jpg' };
+    const picked = await covers.pickImage('camera');
+    expect(picked).toBe('file:///app/cache/foto.jpg');
+
+    const path = await covers.storeFromFile(picked!, 'book-20', old);
+    expect(path).toMatch(/^file:\/\/\/app\/documents\/covers\/book-20-\d+\.jpg$/);
+    expect(files.files.get(path!)).toBe('FOTO');
+    expect(files.files.has(old)).toBe(false);
+
+    files.nextImage = null;
+    expect(await covers.pickImage('library')).toBeNull();
+    expect(await covers.storeFromFile('file:///app/cache/manca.jpg', 'book-21')).toBeNull();
+  });
+
   it('salva e rilegge in base64', async () => {
     const path = await covers.storeBase64('QUJD', 'book-3');
     expect(path).toBe(covers.pathFor('book-3'));
