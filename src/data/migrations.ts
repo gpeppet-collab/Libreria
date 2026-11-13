@@ -67,6 +67,16 @@ export const MIGRATIONS: readonly Migration[] = [
       ),
     ],
   },
+  {
+    version: 2,
+    description: 'Impostazioni chiave/valore (es. chiave API Google Books)',
+    statements: [
+      `CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;

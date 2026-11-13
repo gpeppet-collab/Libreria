@@ -4,6 +4,8 @@ import * as Sharing from 'expo-sharing';
 
 import type { FilePort, PickedFile } from './FilePort';
 
+const MIN_IMAGE_BYTES = 1024;
+
 /** Implementazione di `FilePort` su expo-file-system, expo-sharing ed expo-document-picker. */
 export class ExpoFilePort implements FilePort {
   readonly documentDirectory = withSlash(Paths.document.uri);
@@ -41,7 +43,21 @@ export class ExpoFilePort implements FilePort {
 
   async download(url: string, destinationUri: string): Promise<void> {
     await this.deleteFile(destinationUri);
-    await File.downloadFileAsync(url, new File(destinationUri));
+    const file = new File(destinationUri);
+    try {
+      await File.downloadFileAsync(url, file, { idempotent: true });
+    } catch {
+      // Ripiego: scarica in memoria e scrive i byte (alcuni server non piacciono al download nativo).
+      await this.deleteFile(destinationUri);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await file.write(new Uint8Array(await res.arrayBuffer()));
+    }
+    // Un file minuscolo non è una copertina (es. segnaposto 1x1 o pagina di errore).
+    if (!file.exists || file.size < MIN_IMAGE_BYTES) {
+      await this.deleteFile(destinationUri);
+      throw new Error('Immagine non valida');
+    }
   }
 
   async share(uri: string, mimeType: string): Promise<void> {

@@ -1,5 +1,8 @@
+import { normalizeIsbn } from '@/domain/isbn';
+
 import {
   METADATA_ENDPOINTS,
+  QuotaExceededError,
   type BookMetadata,
   type FetchFn,
   type MetadataProvider,
@@ -13,22 +16,43 @@ import {
   extractYear,
 } from './parsing';
 
-/** Forma (parziale) della risposta di `volumes?q=isbn:`. */
+type VolumeInfo = Record<string, unknown>;
 interface GoogleVolumesResponse {
-  totalItems?: number;
-  items?: { volumeInfo?: Record<string, unknown> }[];
+  items?: { volumeInfo?: VolumeInfo }[];
+}
+
+export interface GoogleBooksOptions {
+  fetchFn?: FetchFn;
+  /**
+   * Chiave API personale (facoltativa). Senza chiave Google usa una quota anonima
+   * condivisa tra tutti, spesso esaurita: con la chiave la ricerca è molto più affidabile.
+   */
+  getApiKey?: () => Promise<string | null>;
 }
 
 export class GoogleBooksProvider implements MetadataProvider {
   readonly source = 'google_books' as const;
+  private readonly fetchFn: FetchFn;
+  private readonly getApiKey: () => Promise<string | null>;
 
-  constructor(private readonly fetchFn: FetchFn = (input, init) => fetch(input, init)) {}
+  constructor(options: GoogleBooksOptions = {}) {
+    this.fetchFn = options.fetchFn ?? ((input, init) => fetch(input, init));
+    this.getApiKey = options.getApiKey ?? (async () => null);
+  }
 
   async lookupByIsbn(isbn: string, signal?: AbortSignal): Promise<BookMetadata | null> {
-    const res = await this.fetchFn(METADATA_ENDPOINTS.googleBooks(isbn), { signal });
-    if (!res.ok) throw new Error(`Google Books HTTP ${res.status}`);
-    const body = (await res.json()) as GoogleVolumesResponse;
-    const info = body.items?.[0]?.volumeInfo;
+    const apiKey = await this.getApiKey().catch(() => null);
+
+    // 1) Ricerca precisa per ISBN.
+    const exact = await this.query(`isbn:${isbn}`, apiKey, signal);
+    let info = exact[0];
+
+    // 2) Alcuni libri non sono indicizzati per ISBN ma compaiono cercando il numero come testo:
+    //    si accetta solo un risultato che dichiara proprio questo ISBN.
+    if (!info) {
+      const loose = await this.query(isbn, apiKey, signal);
+      info = loose.find((v) => hasIsbn(v, isbn));
+    }
     if (!info) return null;
 
     const title = asString(info.title);
@@ -49,4 +73,24 @@ export class GoogleBooksProvider implements MetadataProvider {
       suggestedTags: categoriesToTags(asStringArray(info.categories)),
     };
   }
+
+  private async query(
+    q: string,
+    apiKey: string | null,
+    signal?: AbortSignal,
+  ): Promise<VolumeInfo[]> {
+    const res = await this.fetchFn(METADATA_ENDPOINTS.googleBooks(q, apiKey), { signal });
+    if (res.status === 429 || res.status === 403) throw new QuotaExceededError(this.source);
+    if (!res.ok) throw new Error(`Google Books HTTP ${res.status}`);
+    const body = (await res.json()) as GoogleVolumesResponse;
+    return (body.items ?? []).flatMap((i) => (i.volumeInfo ? [i.volumeInfo] : []));
+  }
+}
+
+function hasIsbn(info: VolumeInfo, isbn: string): boolean {
+  const ids = Array.isArray(info.industryIdentifiers) ? info.industryIdentifiers : [];
+  return ids.some((id) => {
+    const value = (id as { identifier?: unknown } | null)?.identifier;
+    return typeof value === 'string' && normalizeIsbn(value) === isbn;
+  });
 }

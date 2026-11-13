@@ -1,5 +1,6 @@
 import type { BookRepository } from './BookRepository';
 import type { BookTypeRepository } from './BookTypeRepository';
+import { SqliteSettingsRepository, type SettingsRepository } from './SettingsRepository';
 import type { SqlDatabase } from './SqlDatabase';
 import { SqliteBookRepository, type SqliteBookRepositoryOptions } from './SqliteBookRepository';
 import { SqliteBookTypeRepository } from './SqliteBookTypeRepository';
@@ -10,6 +11,7 @@ export interface Repositories {
   books: BookRepository;
   tags: TagRepository;
   bookTypes: BookTypeRepository;
+  settings: SettingsRepository;
 }
 
 /**
@@ -25,5 +27,6 @@ export function createRepositories(
     books: new SqliteBookRepository(db, options),
     tags: new SqliteTagRepository(db),
     bookTypes: new SqliteBookTypeRepository(db),
+    settings: new SqliteSettingsRepository(db),
   };
 }

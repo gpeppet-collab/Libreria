@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useServices } from '@/hooks/ServicesContext';
@@ -16,12 +17,15 @@ export function CoverImage({ path, title, width = 56 }: CoverImageProps) {
   const { covers } = useServices();
   const height = Math.round(width * 1.45);
   const uri = covers.displayUri(path);
-  if (uri) {
+  // Se l'immagine non si carica (file mancante, URL remoto senza rete) si mostra il segnaposto.
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+  if (uri && uri !== failedUri) {
     return (
       <Image
         source={{ uri }}
         style={{ width, height, borderRadius: radius.sm }}
         resizeMode="cover"
+        onError={() => setFailedUri(uri)}
         accessibilityLabel={`Copertina di ${title}`}
       />
     );

@@ -37,14 +37,14 @@ export function useGroupCounts(field: 'ageRange' | 'bookType' | 'status') {
 
 export interface CreateBookInput {
   book: NewBook;
-  /** Copertina da scaricare in background dopo il salvataggio (da metadati online). */
-  coverUrl?: string;
+  /** Copertine candidate da scaricare in background dopo il salvataggio (da metadati online). */
+  coverUrls?: string[];
 }
 
 export interface UpdateBookInput {
   id: string;
   patch: BookPatch;
-  coverUrl?: string;
+  coverUrls?: string[];
 }
 
 /** Mutazioni sui libri con invalidazione della cache. */
@@ -57,9 +57,9 @@ export function useBookMutations() {
       qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
     ]);
 
-  const attachCover = async (book: Book, coverUrl?: string): Promise<Book> => {
-    if (!coverUrl) return book;
-    const path = await covers.download(coverUrl, book.id);
+  const attachCover = async (book: Book, coverUrls?: string[]): Promise<Book> => {
+    if (!coverUrls?.length) return book;
+    const path = await covers.downloadFirst(coverUrls, book.id);
     if (!path) return book;
     const updated = await repos.books.update(book.id, { coverPath: path });
     await invalidate();
@@ -67,20 +67,20 @@ export function useBookMutations() {
   };
 
   const create = useMutation({
-    mutationFn: async ({ book, coverUrl }: CreateBookInput) => {
+    mutationFn: async ({ book, coverUrls }: CreateBookInput) => {
       const created = await repos.books.create(book);
       await invalidate();
       // La copertina si scarica dopo: il salvataggio non aspetta la rete.
-      void attachCover(created, coverUrl);
+      void attachCover(created, coverUrls);
       return created;
     },
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch, coverUrl }: UpdateBookInput) => {
+    mutationFn: async ({ id, patch, coverUrls }: UpdateBookInput) => {
       const updated = await repos.books.update(id, patch);
       await invalidate();
-      if (coverUrl && !updated.coverPath) void attachCover(updated, coverUrl);
+      if (coverUrls?.length && !updated.coverPath) void attachCover(updated, coverUrls);
       return updated;
     },
   });

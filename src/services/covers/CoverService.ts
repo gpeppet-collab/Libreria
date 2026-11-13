@@ -47,6 +47,24 @@ export class CoverService {
     }
   }
 
+  /**
+   * Prova i candidati in ordine e restituisce il path locale del primo scaricato.
+   * Se nessuno si scarica restituisce il primo URL remoto (se `allowRemote`), così la copertina
+   * si vede comunque quando c'è rete; altrimenti null.
+   */
+  async downloadFirst(
+    urls: readonly string[],
+    bookId: string,
+    allowRemote = true,
+  ): Promise<string | null> {
+    for (const url of urls) {
+      const path = await this.download(url, bookId);
+      if (path) return path;
+    }
+    // L'ultimo candidato è spesso un tentativo "alla cieca": come remoto si usa solo il primo.
+    return allowRemote && urls.length > 1 ? (urls[0] ?? null) : null;
+  }
+
   /** Salva una copertina ricevuta in base64 (import) e restituisce il path locale, oppure null. */
   async storeBase64(base64: string, bookId: string): Promise<string | null> {
     const dest = this.pathFor(bookId);

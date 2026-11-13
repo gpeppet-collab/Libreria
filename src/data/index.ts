@@ -11,3 +11,8 @@ export { getDatabase, DATABASE_NAME } from './db';
 export { runMigrations } from './migrate';
 export { MIGRATIONS, LATEST_SCHEMA_VERSION } from './migrations';
 export * from './errors';
+export {
+  SqliteSettingsRepository,
+  SETTING_GOOGLE_BOOKS_API_KEY,
+  type SettingsRepository,
+} from './SettingsRepository';

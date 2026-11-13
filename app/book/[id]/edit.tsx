@@ -26,8 +26,8 @@ export default function EditBookScreen() {
         initial={book.data}
         submitting={update.isPending}
         error={update.error}
-        onSubmit={({ book: patch, coverUrl }) =>
-          update.mutate({ id: book.data!.id, patch, coverUrl }, { onSuccess: () => router.back() })
+        onSubmit={({ book: patch, coverUrls }) =>
+          update.mutate({ id: book.data!.id, patch, coverUrls }, { onSuccess: () => router.back() })
         }
       />
     </ScrollScreen>

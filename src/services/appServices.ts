@@ -1,10 +1,11 @@
 import { getRepositories } from '@/data/appRepositories';
 import type { Repositories } from '@/data/repositories';
+import { SETTING_GOOGLE_BOOKS_API_KEY } from '@/data/SettingsRepository';
 
 import { CoverService } from './covers/CoverService';
 import { ExportImportService } from './exportImport/ExportImportService';
 import { createFilePort } from './files/createFilePort';
-import { getMetadataService } from './metadata/appMetadataService';
+import { createAppMetadataService } from './metadata/appMetadataService';
 import type { MetadataService } from './metadata/MetadataProvider';
 
 export interface AppServices {
@@ -36,7 +37,7 @@ export function getAppServices(): Promise<AppServices> {
         repos,
         covers,
         exportImport: new ExportImportService(repos, covers, files),
-        metadata: getMetadataService(),
+        metadata: createAppMetadataService(() => repos.settings.get(SETTING_GOOGLE_BOOKS_API_KEY)),
       };
     })();
   }

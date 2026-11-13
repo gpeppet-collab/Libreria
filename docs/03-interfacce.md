@@ -157,6 +157,8 @@ export interface MetadataService {
 }
 ```
 
+Dal 2026-11-13 il servizio è `MergingMetadataService` (fonti in parallelo e unite, `lookupDetailed()` con `outcomes` per fonte e `coverUrls` candidate) e c'è un terzo provider, `SbnProvider` (`https://opac.sbn.it/opacmobilegw/search.json?isbn={isbn}`); vedi l'aggiornamento in ADR-0003. `SettingsRepository` conserva la chiave API Google facoltativa.
+
 ### API esterne (sola lettura, senza chiave; verso di esse viaggia solo l'ISBN)
 
 | Provider                 | Endpoint                                                                           | Campi usati                                                                                                                                                                          |

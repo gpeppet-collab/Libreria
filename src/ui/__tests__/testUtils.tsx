@@ -27,7 +27,18 @@ export async function createTestServices(): Promise<TestContext> {
   const covers = new CoverService(files);
   const repos = createRepositories(db, { onBookRemoved: (b) => covers.remove(b.coverPath) });
   const metadata = new Map<string, BookMetadata | null>();
-  const metadataService: MetadataService = { lookup: async (isbn) => metadata.get(isbn) ?? null };
+  const metadataService: MetadataService = {
+    lookup: async (isbn) => metadata.get(isbn) ?? null,
+    lookupDetailed: async (isbn) => {
+      const m = metadata.get(isbn) ?? null;
+      return {
+        metadata: m,
+        coverUrls: m?.coverUrl ? [m.coverUrl] : [],
+        outcomes: [{ source: 'google_books', status: m ? 'found' : 'quota' }],
+        offline: false,
+      };
+    },
+  };
   return {
     db,
     files,

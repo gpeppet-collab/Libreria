@@ -1,5 +1,6 @@
 import {
   METADATA_ENDPOINTS,
+  QuotaExceededError,
   type BookMetadata,
   type FetchFn,
   type MetadataProvider,
@@ -25,6 +26,7 @@ export class OpenLibraryProvider implements MetadataProvider {
 
   async lookupByIsbn(isbn: string, signal?: AbortSignal): Promise<BookMetadata | null> {
     const res = await this.fetchFn(METADATA_ENDPOINTS.openLibrary(isbn), { signal });
+    if (res.status === 429) throw new QuotaExceededError(this.source);
     if (!res.ok) throw new Error(`Open Library HTTP ${res.status}`);
     const body = (await res.json()) as Record<string, OpenLibraryBook | undefined>;
     const entry = body[`ISBN:${isbn}`];
@@ -44,9 +46,7 @@ export class OpenLibraryProvider implements MetadataProvider {
       publisher: names(entry.publishers)[0],
       publishedYear: extractYear(entry.publish_date),
       pageCount: asPositiveInt(entry.number_of_pages),
-      coverUrl:
-        cleanCoverUrl(cover.large ?? cover.medium ?? cover.small) ??
-        METADATA_ENDPOINTS.openLibraryCover(isbn),
+      coverUrl: cleanCoverUrl(cover.large ?? cover.medium ?? cover.small),
       source: this.source,
       suggestedTags: categoriesToTags(names(entry.subjects)),
     };

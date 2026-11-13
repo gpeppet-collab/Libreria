@@ -1,7 +1,8 @@
 import { GoogleBooksProvider } from '../GoogleBooksProvider';
 import type { BookMetadata, MetadataProvider } from '../MetadataProvider';
-import { FallbackMetadataService } from '../MetadataService';
+import { MergingMetadataService, type MetadataServiceOptions } from '../MetadataService';
 import { OpenLibraryProvider } from '../OpenLibraryProvider';
+import { SbnProvider } from '../SbnProvider';
 import { metadataToBookFields } from '../toBook';
 import {
   fakeFetch,
@@ -10,83 +11,133 @@ import {
   ISBN,
   jsonResponse,
   OPENLIBRARY_RESPONSE,
+  SBN_RESPONSE,
 } from './fixtures';
+
+const OL_COVER_GUESS = `https://covers.openlibrary.org/b/isbn/${ISBN}-L.jpg?default=false`;
 
 function service(
   fetchFn: ReturnType<typeof fakeFetch>,
-  extra: Partial<ConstructorParameters<typeof FallbackMetadataService>[0]> = {},
+  extra: Partial<MetadataServiceOptions> = {},
 ) {
-  return new FallbackMetadataService({
-    providers: [new GoogleBooksProvider(fetchFn), new OpenLibraryProvider(fetchFn)],
+  return new MergingMetadataService({
+    providers: [
+      new GoogleBooksProvider({ fetchFn }),
+      new SbnProvider(fetchFn),
+      new OpenLibraryProvider(fetchFn),
+    ],
     ...extra,
   });
 }
 
-describe('FallbackMetadataService', () => {
-  it('usa Google Books quando risponde e non interroga Open Library', async () => {
-    const fetchFn = fakeFetch({ 'googleapis.com': async () => jsonResponse(GOOGLE_RESPONSE) });
-    const meta = await service(fetchFn).lookup('0-14-032872-6'); // ISBN-10, viene normalizzato
-    expect(meta?.source).toBe('google_books');
-    expect(meta?.isbn).toBe(ISBN);
-    expect(fetchFn.calls).toHaveLength(1);
-  });
-
-  it('passa a Open Library se Google non trova nulla o fallisce', async () => {
-    const notFound = fakeFetch({
+describe('MergingMetadataService', () => {
+  it('interroga tutte le fonti e unisce: la prima che trova fa da base, le altre riempiono', async () => {
+    const fetchFn = fakeFetch({
       'googleapis.com': async () => jsonResponse(GOOGLE_EMPTY),
+      'opac.sbn.it': async () => jsonResponse(SBN_RESPONSE),
       'openlibrary.org': async () => jsonResponse(OPENLIBRARY_RESPONSE),
     });
-    expect((await service(notFound).lookup(ISBN))?.source).toBe('open_library');
+    const result = await service(fetchFn).lookupDetailed('0-14-032872-6'); // ISBN-10, viene normalizzato
+    expect(result.offline).toBe(false);
+    expect(result.outcomes).toEqual([
+      { source: 'google_books', status: 'not_found' },
+      { source: 'sbn', status: 'found' },
+      { source: 'open_library', status: 'found' },
+    ]);
+    expect(result.metadata).toEqual({
+      isbn: ISBN,
+      title: 'Furbo, il signor Volpe', // da SBN (base)
+      authors: ['Roald Dahl'],
+      publisher: 'Salani',
+      publishedYear: 2016,
+      pageCount: 96, // da Open Library
+      description: undefined,
+      coverUrl: 'https://covers.openlibrary.org/b/id/8739161-L.jpg', // da Open Library
+      source: 'sbn',
+      suggestedTags: ['foxes', 'juvenile fiction', 'farmers', 'fiction'],
+    });
+    expect(result.coverUrls).toEqual([
+      'https://covers.openlibrary.org/b/id/8739161-L.jpg',
+      OL_COVER_GUESS,
+    ]);
+  });
 
+  it('con Google disponibile usa Google come base e mette la sua copertina per prima', async () => {
+    const fetchFn = fakeFetch({
+      'googleapis.com': async () => jsonResponse(GOOGLE_RESPONSE),
+      'opac.sbn.it': async () => jsonResponse({ briefRecords: [] }),
+      'openlibrary.org': async () => jsonResponse(OPENLIBRARY_RESPONSE),
+    });
+    const result = await service(fetchFn).lookupDetailed(ISBN);
+    expect(result.metadata?.source).toBe('google_books');
+    expect(result.metadata?.title).toBe('Fantastic Mr Fox');
+    expect(result.coverUrls).toEqual([
+      'https://books.google.com/books/content?id=abc&img=1&zoom=1&source=gbs_api',
+      'https://covers.openlibrary.org/b/id/8739161-L.jpg',
+      OL_COVER_GUESS,
+    ]);
+    expect(await service(fetchFn).lookup(ISBN)).toEqual(result.metadata);
+  });
+
+  it('riporta quota, errori e non trovato per fonte, senza lanciare', async () => {
     const errors: string[] = [];
-    const failing = fakeFetch({
-      'googleapis.com': async () => jsonResponse({}, 500),
-      'openlibrary.org': async () => jsonResponse(OPENLIBRARY_RESPONSE),
-    });
-    const meta = await service(failing, { onError: (s) => errors.push(s) }).lookup(ISBN);
-    expect(meta?.source).toBe('open_library');
-    expect(errors).toEqual(['google_books']);
-  });
-
-  it('restituisce null, senza lanciare, se tutti falliscono, se offline o se l ISBN non è valido', async () => {
-    const failing = fakeFetch({
-      'googleapis.com': async () => {
+    const fetchFn = fakeFetch({
+      'googleapis.com': async () => jsonResponse({}, 429),
+      'opac.sbn.it': async () => {
         throw new Error('rete');
       },
-      'openlibrary.org': async () => {
-        throw new Error('rete');
-      },
+      'openlibrary.org': async () => jsonResponse({}),
     });
-    expect(await service(failing).lookup(ISBN)).toBeNull();
-    expect(failing.calls).toHaveLength(2);
-
-    const offline = fakeFetch({ 'googleapis.com': async () => jsonResponse(GOOGLE_RESPONSE) });
-    expect(await service(offline, { isOnline: async () => false }).lookup(ISBN)).toBeNull();
-    expect(offline.calls).toHaveLength(0);
-
-    const broken = fakeFetch({ 'googleapis.com': async () => jsonResponse(GOOGLE_RESPONSE) });
-    expect(
-      await service(broken, {
-        isOnline: async () => {
-          throw new Error('netinfo');
-        },
-      }).lookup(ISBN),
-    ).toBeNull();
-
-    expect(await service(fakeFetch({})).lookup('abc')).toBeNull();
+    const result = await service(fetchFn, { onError: (s) => errors.push(s) }).lookupDetailed(ISBN);
+    expect(result.metadata).toBeNull();
+    expect(result.coverUrls).toEqual([]);
+    expect(result.outcomes).toEqual([
+      { source: 'google_books', status: 'quota' },
+      { source: 'sbn', status: 'error' },
+      { source: 'open_library', status: 'not_found' },
+    ]);
+    expect(errors.sort()).toEqual(['google_books', 'sbn']);
   });
 
-  it('rispetta il timeout complessivo anche se un provider non risponde', async () => {
+  it('offline non interroga nessuno; ISBN non valido dà risultato vuoto; stato rete ignoto prova comunque', async () => {
+    const fetchFn = fakeFetch({ 'googleapis.com': async () => jsonResponse(GOOGLE_RESPONSE) });
+    const offline = await service(fetchFn, { isOnline: async () => false }).lookupDetailed(ISBN);
+    expect(offline).toEqual({ metadata: null, coverUrls: [], outcomes: [], offline: true });
+    expect(fetchFn.calls).toHaveLength(0);
+
+    expect(await service(fetchFn).lookupDetailed('abc')).toEqual({
+      metadata: null,
+      coverUrls: [],
+      outcomes: [],
+      offline: false,
+    });
+
+    const unknown = await service(fetchFn, {
+      isOnline: async () => {
+        throw new Error('netinfo');
+      },
+    }).lookupDetailed(ISBN);
+    expect(unknown.metadata?.source).toBe('google_books');
+  });
+
+  it('rispetta il timeout: chi non risponde è "timeout", chi ha risposto conta', async () => {
     const hanging: MetadataProvider = {
       source: 'google_books',
       lookupByIsbn: () => new Promise<BookMetadata | null>(() => {}),
     };
-    const never = { source: 'open_library' as const, lookupByIsbn: jest.fn(async () => null) };
-    const svc = new FallbackMetadataService({ providers: [hanging, never], timeoutMs: 20 });
+    const quick: MetadataProvider = {
+      source: 'sbn',
+      lookupByIsbn: async (isbn) => ({ isbn, title: 'Veloce', authors: [], source: 'sbn' }),
+    };
+    const svc = new MergingMetadataService({ providers: [hanging, quick], timeoutMs: 20 });
     const start = Date.now();
-    expect(await svc.lookup(ISBN)).toBeNull();
+    const result = await svc.lookupDetailed(ISBN);
     expect(Date.now() - start).toBeLessThan(1000);
-    expect(never.lookupByIsbn).not.toHaveBeenCalled();
+    expect(result.metadata?.title).toBe('Veloce');
+    expect(result.outcomes).toEqual([
+      { source: 'google_books', status: 'timeout' },
+      { source: 'sbn', status: 'found' },
+    ]);
   });
 });
 

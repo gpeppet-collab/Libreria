@@ -74,6 +74,16 @@ export const t = {
     lookingUp: 'Ricerca in corso…',
     lookupFound: (source: string) => `Dati trovati su ${source}. Controlla e completa.`,
     lookupNotFound: 'Nessun dato trovato online. Compila a mano.',
+    lookupOffline: 'Telefono senza rete: ricerca online non eseguita.',
+    lookupQuotaHint:
+      'Google Books ha esaurito le richieste anonime: una chiave gratuita in Impostazioni lo rende affidabile.',
+    lookupStatus: {
+      found: 'trovato',
+      not_found: 'non trovato',
+      quota: 'limite richieste',
+      error: 'errore',
+      timeout: 'nessuna risposta',
+    } as const,
     publisher: 'Editore',
     year: 'Anno',
     pages: 'Pagine',
@@ -123,6 +133,12 @@ export const t = {
     importDone: (r: { inserted: number; replaced: number; skipped: number }) =>
       `Inseriti ${r.inserted}, sostituiti ${r.replaced}, saltati ${r.skipped}.`,
     importInvalid: 'Il file non è un export valido di Libreria.',
+    onlineSearch: 'Ricerca online',
+    googleKey: 'Chiave API Google Books (facoltativa)',
+    googleKeyHint:
+      'Senza chiave Google limita le ricerche anonime e spesso non risponde. La chiave è gratuita: si crea su console.cloud.google.com abilitando "Books API". Resta salvata solo su questo telefono.',
+    googleKeySaved: 'Chiave salvata',
+    googleKeyRemoved: 'Chiave rimossa',
     manageTags: 'Gestisci tag',
     manageTypes: 'Gestisci tipi di libro',
     about: 'Informazioni',
@@ -144,5 +160,5 @@ export const t = {
     deleteMessage: (name: string) => `I libri di tipo "${name}" resteranno senza tipo.`,
     duplicate: 'Esiste già un tipo con questo nome',
   },
-  sources: { google_books: 'Google Books', open_library: 'Open Library' } as const,
+  sources: { google_books: 'Google Books', open_library: 'Open Library', sbn: 'OPAC SBN' } as const,
 } as const;

@@ -43,8 +43,8 @@ describe('BookForm', () => {
     await fireEvent.press(screen.getByText(t.common.save));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    const { book, coverUrl } = onSubmit.mock.calls[0]![0];
-    expect(coverUrl).toBeUndefined();
+    const { book, coverUrls } = onSubmit.mock.calls[0]![0];
+    expect(coverUrls).toBeUndefined();
     expect(book).toMatchObject({
       title: '  Il Gruffalò ',
       authors: ['Julia Donaldson', 'Axel Scheffler'],
@@ -70,7 +70,11 @@ describe('BookForm', () => {
     const onSubmit = jest.fn<void, [BookFormResult]>();
     await renderWithServices(<BookForm initialIsbn={ISBN} onSubmit={onSubmit} />, ctx.services);
 
-    expect(await screen.findByText(t.form.lookupFound('Google Books'))).toBeTruthy();
+    expect(
+      await screen.findByText(
+        new RegExp(`${t.form.lookupFound('Google Books')}[\\s\\S]*Google Books: trovato`),
+      ),
+    ).toBeTruthy();
     expect(screen.getByLabelText(t.form.title).props.value).toBe('Fantastic Mr Fox');
     expect(screen.getByLabelText(t.form.authors).props.value).toBe('Roald Dahl');
     expect(screen.getByText(t.form.coverWillDownload)).toBeTruthy();
@@ -80,7 +84,7 @@ describe('BookForm', () => {
     let call = onSubmit.mock.calls[0]![0];
     expect(call.book.tags).toEqual([]);
     expect(call.book.publishedYear).toBe(2007);
-    expect(call.coverUrl).toBe('https://example.org/c.jpg');
+    expect(call.coverUrls).toEqual(['https://example.org/c.jpg']);
 
     await fireEvent.press(screen.getByText('+ volpi'));
     await fireEvent.press(screen.getByText(t.common.save));
@@ -90,7 +94,9 @@ describe('BookForm', () => {
 
   it('se il libro non è noto online lo dice e lascia il form vuoto', async () => {
     await renderWithServices(<BookForm initialIsbn={ISBN} onSubmit={jest.fn()} />, ctx.services);
-    expect(await screen.findByText(t.form.lookupNotFound)).toBeTruthy();
+    expect(
+      await screen.findByText(new RegExp(`Google Books: limite richieste[\\s\\S]*chiave gratuita`)),
+    ).toBeTruthy();
     expect(screen.getByLabelText(t.form.title).props.value).toBe('');
     expect(screen.getByLabelText(t.form.isbn).props.value).toBe(ISBN);
   });

@@ -30,14 +30,14 @@ describe('OpenLibraryProvider', () => {
     expect(await provider.lookupByIsbn(ISBN)).toBeNull();
   });
 
-  it('usa l URL copertina per ISBN quando manca il campo cover', async () => {
+  it('senza campo cover non inventa una copertina', async () => {
     const provider = new OpenLibraryProvider(
       fakeFetch({
         'openlibrary.org': async () => jsonResponse({ [`ISBN:${ISBN}`]: { title: 'T' } }),
       }),
     );
     const meta = await provider.lookupByIsbn(ISBN);
-    expect(meta?.coverUrl).toBe(`https://covers.openlibrary.org/b/isbn/${ISBN}-L.jpg`);
+    expect(meta?.coverUrl).toBeUndefined();
     expect(meta?.authors).toEqual([]);
   });
 

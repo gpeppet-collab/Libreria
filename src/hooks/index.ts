@@ -5,3 +5,4 @@ export * from './useTags';
 export * from './useBookTypes';
 export { useMetadataLookup } from './useMetadataLookup';
 export { useExportImport } from './useExportImport';
+export { useSetting } from './useSettings';

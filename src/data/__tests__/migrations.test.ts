@@ -2,6 +2,7 @@ import { BUILTIN_BOOK_TYPES } from '@/domain/bookTypes';
 
 import { runMigrations } from '../migrate';
 import { LATEST_SCHEMA_VERSION } from '../migrations';
+import { SqliteSettingsRepository } from '../SettingsRepository';
 import { NodeSqliteDatabase } from './nodeSqlite';
 
 describe('migrazioni', () => {
@@ -20,6 +21,23 @@ describe('migrazioni', () => {
 
     const fk = await db.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys', []);
     expect(fk?.foreign_keys).toBe(1);
+
+    const settings = await db.getAllAsync('SELECT * FROM settings', []);
+    expect(settings).toEqual([]);
+    db.close();
+  });
+
+  it('salva, aggiorna ed elimina le impostazioni', async () => {
+    const db = new NodeSqliteDatabase();
+    await runMigrations(db);
+    const repo = new SqliteSettingsRepository(db);
+    expect(await repo.get('k')).toBeNull();
+    await repo.set('k', '  valore ');
+    expect(await repo.get('k')).toBe('valore');
+    await repo.set('k', 'nuovo');
+    expect(await repo.get('k')).toBe('nuovo');
+    await repo.set('k', '  ');
+    expect(await repo.get('k')).toBeNull();
     db.close();
   });
 

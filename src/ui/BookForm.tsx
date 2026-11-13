@@ -16,6 +16,7 @@ import {
 import { useBookTypes } from '@/hooks/useBookTypes';
 import { useMetadataLookup } from '@/hooks/useMetadataLookup';
 import { t } from '@/i18n/it';
+import type { LookupResult } from '@/services/metadata/MetadataProvider';
 import { metadataToBookFields } from '@/services/metadata/toBook';
 
 import { Button } from './Button';
@@ -29,8 +30,8 @@ import { AGE_RANGE_COLORS, useTheme } from './theme';
 
 export interface BookFormResult {
   book: NewBook;
-  /** Copertina da scaricare (dai metadati), se il libro non ne ha una. */
-  coverUrl?: string;
+  /** Copertine candidate da scaricare (dai metadati), se il libro non ne ha una. */
+  coverUrls?: string[];
 }
 
 interface BookFormProps {
@@ -82,12 +83,27 @@ function fromBook(book: Book | null | undefined, isbn?: string): FormState {
   };
 }
 
+/** Messaggio sull'esito della ricerca online, con il dettaglio per fonte. */
+function describeLookup(result: LookupResult): string {
+  if (result.offline) return t.form.lookupOffline;
+  const detail = result.outcomes
+    .map((o) => `${t.sources[o.source]}: ${t.form.lookupStatus[o.status]}`)
+    .join(' · ');
+  const head = result.metadata
+    ? t.form.lookupFound(t.sources[result.metadata.source])
+    : t.form.lookupNotFound;
+  const quota = result.outcomes.some((o) => o.source === 'google_books' && o.status === 'quota')
+    ? `\n${t.form.lookupQuotaHint}`
+    : '';
+  return `${head}\n${detail}${quota}`;
+}
+
 /** Form di inserimento e modifica (RF1, RF3, RF4, RF5, RF11, RF12, RF13, RF15). */
 export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: BookFormProps) {
   const { spacing } = useTheme();
   const [form, setForm] = useState<FormState>(() => fromBook(initial, initialIsbn));
   const [touched, setTouched] = useState(false);
-  const [coverUrl, setCoverUrl] = useState<string | undefined>();
+  const [coverUrls, setCoverUrls] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const bookTypes = useBookTypes();
   const lookup = useMetadataLookup();
@@ -97,7 +113,8 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
 
   const runLookup = (isbn: string) => {
     lookup.mutate(isbn, {
-      onSuccess: (meta) => {
+      onSuccess: (result) => {
+        const meta = result.metadata;
         if (!meta) return;
         const fields = metadataToBookFields(meta);
         setForm((f) => ({
@@ -111,7 +128,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
           pageCount: f.pageCount || (fields.pageCount ? String(fields.pageCount) : ''),
           description: f.description || fields.description || '',
         }));
-        if (meta.coverUrl && !initial?.coverPath) setCoverUrl(meta.coverUrl);
+        if (!initial?.coverPath) setCoverUrls(result.coverUrls);
         setSuggestedTags(meta.suggestedTags ?? []);
       },
     });
@@ -126,9 +143,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   const lookupMessage = lookup.isPending
     ? t.form.lookingUp
     : lookup.isSuccess
-      ? lookup.data
-        ? t.form.lookupFound(t.sources[lookup.data.source])
-        : t.form.lookupNotFound
+      ? describeLookup(lookup.data)
       : null;
 
   const isbnNormalized = form.isbn.trim() ? normalizeIsbn(form.isbn) : null;
@@ -167,7 +182,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       bookTypeId: form.bookTypeId,
       tags: form.tags,
     };
-    onSubmit({ book, coverUrl });
+    onSubmit({ book, coverUrls: coverUrls.length ? coverUrls : undefined });
   };
 
   const today = () => new Date().toISOString().slice(0, 10);
@@ -200,7 +215,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
             </AppText>
           ) : null}
         </Row>
-        {coverUrl ? <AppText variant="small">{t.form.coverWillDownload}</AppText> : null}
+        {coverUrls.length ? <AppText variant="small">{t.form.coverWillDownload}</AppText> : null}
         <Field
           label={t.form.title}
           value={form.title}

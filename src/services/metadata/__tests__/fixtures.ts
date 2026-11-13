@@ -58,7 +58,10 @@ export function jsonResponse(body: unknown, status = 200): FetchResponse {
 /** fetch finto che risponde in base all'host dell'URL e registra le chiamate. */
 export function fakeFetch(
   handlers: Partial<
-    Record<'googleapis.com' | 'openlibrary.org', (url: string) => Promise<FetchResponse>>
+    Record<
+      'googleapis.com' | 'openlibrary.org' | 'opac.sbn.it',
+      (url: string) => Promise<FetchResponse>
+    >
   >,
 ): FetchFn & { calls: string[] } {
   const calls: string[] = [];
@@ -72,3 +75,16 @@ export function fakeFetch(
   };
   return Object.assign(fn, { calls });
 }
+
+/** Risposta (ridotta) del catalogo SBN. */
+export const SBN_RESPONSE = {
+  numFound: 1,
+  briefRecords: [
+    {
+      autorePrincipale: 'Dahl, Roald <1916-1990>',
+      titolo: 'Furbo, il signor Volpe / Roald Dahl ; illustrazioni di Quentin Blake',
+      pubblicazione: 'Milano : Salani, 2016',
+      copertina: '',
+    },
+  ],
+};
