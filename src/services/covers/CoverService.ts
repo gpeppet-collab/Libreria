@@ -35,7 +35,8 @@ export class CoverService {
 
   /** Scarica la copertina e restituisce il path locale, oppure null. */
   async download(url: string, bookId: string): Promise<string | null> {
-    const dest = this.pathFor(bookId);
+    // Nome unico: `<Image>` tiene in cache per indirizzo e mostrerebbe una copertina sostituita.
+    const dest = joinUri(this.directory, `${bookId}-${Date.now()}.jpg`);
     try {
       await this.files.ensureDirectory(this.directory);
       await this.files.download(url, dest);

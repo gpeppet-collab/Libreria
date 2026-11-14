@@ -108,6 +108,8 @@ export const t = {
     coverCamera: 'Scatta foto',
     coverLibrary: 'Scegli dalla galleria',
     coverRemove: 'Rimuovi copertina',
+    coverMaybeOnline:
+      'Nessuna copertina sicura trovata online: al salvataggio si prova comunque, altrimenti scatta una foto.',
     coverWillDownload: 'La copertina verrà scaricata al salvataggio',
   },
   detail: {

@@ -11,10 +11,12 @@ interface CoverImageProps {
   previewUri?: string | null;
   title: string;
   width?: number;
+  /** Chiamato se l'immagine salvata non si riesce a caricare. */
+  onLoadError?: () => void;
 }
 
 /** Copertina locale con segnaposto (iniziale del titolo) se assente. */
-export function CoverImage({ path, previewUri, title, width = 56 }: CoverImageProps) {
+export function CoverImage({ path, previewUri, title, width = 56, onLoadError }: CoverImageProps) {
   const { colors, radius } = useTheme();
   const { covers } = useServices();
   const height = Math.round(width * 1.45);
@@ -27,7 +29,10 @@ export function CoverImage({ path, previewUri, title, width = 56 }: CoverImagePr
         source={{ uri }}
         style={{ width, height, borderRadius: radius.sm }}
         resizeMode="cover"
-        onError={() => setFailedUri(uri)}
+        onError={() => {
+          setFailedUri(uri);
+          onLoadError?.();
+        }}
         accessibilityLabel={`Copertina di ${title}`}
       />
     );

@@ -148,4 +148,46 @@ describe('BookForm', () => {
       coverUrls: undefined,
     });
   });
+
+  it('una copertina salvata che non si carica conta come assente e viene sostituita da quella online', async () => {
+    ctx.metadata.set(ISBN, {
+      isbn: ISBN,
+      title: 'T',
+      authors: [],
+      coverUrl: 'https://example.org/c.jpg',
+      source: 'google_books',
+    });
+    const saved = await ctx.services.repos.books.create({
+      isbn: ISBN,
+      title: 'T',
+      authors: [],
+      publisher: null,
+      publishedYear: null,
+      pageCount: null,
+      description: null,
+      coverPath: 'file:///app/documents/covers/rotta.jpg',
+      status: 'da_leggere',
+      rating: null,
+      notes: null,
+      startedAt: null,
+      finishedAt: null,
+      ageRange: null,
+      bookTypeId: null,
+      tags: [],
+    });
+    const onSubmit = jest.fn<void, [BookFormResult]>();
+    await renderWithServices(<BookForm initial={saved} onSubmit={onSubmit} />, ctx.services);
+
+    await fireEvent.press(screen.getByText(t.form.lookup));
+    await screen.findByText(/Google Books: trovato/);
+    // Con una copertina valida quella online non serve.
+    expect(screen.queryByText(t.form.coverWillDownload)).toBeNull();
+
+    await fireEvent(screen.getByLabelText('Copertina di T'), 'error');
+    expect(await screen.findByText(t.form.coverWillDownload)).toBeTruthy();
+    await fireEvent.press(screen.getByText(t.common.save));
+    const result = onSubmit.mock.calls[0]![0];
+    expect(result.book.coverPath).toBeNull();
+    expect(result.coverUrls).toEqual(['https://example.org/c.jpg']);
+  });
 });

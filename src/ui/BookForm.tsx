@@ -110,6 +110,9 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   const [coverUrls, setCoverUrls] = useState<string[]>([]);
   const [coverFileUri, setCoverFileUri] = useState<string | null>(null);
   const [removeCover, setRemoveCover] = useState(false);
+  /** La copertina salvata non si riesce a mostrare (file mancante o non valido). */
+  const [coverBroken, setCoverBroken] = useState(false);
+  const [onlineCoverMissing, setOnlineCoverMissing] = useState(false);
   const { covers } = useServices();
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const bookTypes = useBookTypes();
@@ -135,7 +138,9 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
           pageCount: f.pageCount || (fields.pageCount ? String(fields.pageCount) : ''),
           description: f.description || fields.description || '',
         }));
-        if (!initial?.coverPath) setCoverUrls(result.coverUrls);
+        // Le copertine candidate si tengono sempre: si usano solo se manca una copertina valida.
+        setCoverUrls(result.coverUrls);
+        setOnlineCoverMissing(!meta.coverUrl);
         setSuggestedTags(meta.suggestedTags ?? []);
       },
     });
@@ -165,6 +170,10 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   );
   const valid = Object.values(errors).every((e) => e === null);
 
+  // Una copertina guasta conta come assente: così quella online la sostituisce.
+  const currentCover = removeCover || coverBroken ? null : (initial?.coverPath ?? null);
+  const willDownloadCover = coverUrls.length > 0 && !coverFileUri && !currentCover;
+
   const submit = () => {
     setTouched(true);
     if (!valid) return;
@@ -179,7 +188,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       publishedYear: form.publishedYear ? Number(form.publishedYear) : null,
       pageCount: form.pageCount ? Number(form.pageCount) : null,
       description: form.description || null,
-      coverPath: removeCover ? null : (initial?.coverPath ?? null),
+      coverPath: currentCover,
       status: form.status,
       rating: form.rating,
       notes: form.notes || null,
@@ -191,7 +200,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
     };
     onSubmit({
       book,
-      coverUrls: coverUrls.length && !coverFileUri ? coverUrls : undefined,
+      coverUrls: willDownloadCover ? coverUrls : undefined,
       coverFileUri: coverFileUri ?? undefined,
     });
   };
@@ -203,7 +212,6 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       setRemoveCover(false);
     }
   };
-  const currentCover = removeCover ? null : (initial?.coverPath ?? null);
 
   const today = () => new Date().toISOString().slice(0, 10);
 
@@ -284,7 +292,13 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       <Card>
         <AppText variant="heading">{t.form.cover}</AppText>
         <Row style={{ alignItems: 'flex-start' }}>
-          <CoverImage path={currentCover} previewUri={coverFileUri} title={form.title} width={84} />
+          <CoverImage
+            path={currentCover}
+            previewUri={coverFileUri}
+            title={form.title}
+            width={84}
+            onLoadError={() => !coverFileUri && setCoverBroken(true)}
+          />
           <View style={{ flex: 1, gap: spacing.sm }}>
             <Button
               title={t.form.coverCamera}
@@ -312,8 +326,10 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
             ) : null}
           </View>
         </Row>
-        {coverUrls.length && !coverFileUri && !currentCover ? (
-          <AppText variant="small">{t.form.coverWillDownload}</AppText>
+        {willDownloadCover ? (
+          <AppText variant="small">
+            {onlineCoverMissing ? t.form.coverMaybeOnline : t.form.coverWillDownload}
+          </AppText>
         ) : null}
       </Card>
 

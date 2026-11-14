@@ -15,7 +15,7 @@ describe('CoverService', () => {
   it('scarica la copertina nella cartella covers e restituisce il path', async () => {
     files.downloads.set('https://x/cover.jpg', 'JPEGDATA');
     const path = await covers.download('https://x/cover.jpg', 'book-1');
-    expect(path).toBe('file:///app/documents/covers/book-1.jpg');
+    expect(path).toMatch(/^file:\/\/\/app\/documents\/covers\/book-1-\d+\.jpg$/);
     expect(files.files.get(path!)).toBe('JPEGDATA');
     expect(files.directories.has('file:///app/documents/covers/')).toBe(true);
   });

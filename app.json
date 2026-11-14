@@ -2,7 +2,7 @@
   "expo": {
     "name": "Libreria",
     "slug": "libreria",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "scheme": "libreria",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
