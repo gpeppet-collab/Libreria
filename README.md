@@ -2,7 +2,7 @@
 
 Catalogo personale di libri per Android, pensato per una famiglia con molti libri per bambini. Funziona interamente in locale sul telefono, senza account e senza server: i dati stanno in un database SQLite nell'app e si possono esportare in un file.
 
-Funzioni della prima versione: scansione del codice ISBN, recupero facoltativo dei dati del libro da Google Books / Open Library, stato di lettura, valutazione e note, classificazione per **fascia d'età**, **tipo di libro** e **tag liberi**, ricerca e filtri, export/import JSON.
+Funzioni: scansione del codice ISBN, recupero facoltativo dei dati del libro da Google Books / Open Library, stato di lettura, valutazione e note, classificazione per **fascia d'età**, **tipo di libro** e **tag liberi**, ricerca e filtri, export/import JSON.
 
 ## Documentazione di progetto
 
@@ -63,11 +63,11 @@ Il proxy serve perché expo-sqlite sul web usa SharedArrayBuffer, che richiede l
 
 ## Stato
 
-Prima versione funzionante completa:
+Versione 0.6.0, in uso su telefono reale.
 
-- **Dati**: repository SQLite con migrazioni, ricerca, filtri, ordinamenti e conteggi.
-- **Servizi**: metadati online (Google Books con fallback Open Library), copertine locali, export/import JSON.
-- **Interfaccia**: lista con ricerca, filtri per stato, fascia d'età, tipo e tag e ordinamento; vista per gruppo; scanner ISBN con controllo duplicati; form con ricerca online, classificazione e tag suggeriti; dettaglio con cambio rapido di stato e stelle; impostazioni con export/import e gestione di tag e tipi. Tema chiaro e scuro.
+- **Catalogo**: lista con ricerca, filtri (stato, fascia d'età, tipo, tag, non classificati) e ordinamento; vista per gruppo; dettaglio con cambio rapido di stato e stelle.
+- **Inserimento**: scanner ISBN con controllo duplicati; ricerca online per ISBN o per titolo su Google Books, OPAC SBN e Open Library con esito per fonte; copertina online, da foto o dalla galleria; date dal calendario; tag esistenti selezionabili.
+- **Impostazioni**: export/import JSON, tema chiaro/scuro, chiave Google Books facoltativa, gestione di tag e tipi.
 - **Test**: dominio, dati e servizi su SQLite reale in memoria; componenti e schermate con React Native Testing Library.
 
-Da provare su un telefono reale: fotocamera, condivisione e selettore file, chiamate reali alle API dei metadati.
+Da fare: misura delle prestazioni con migliaia di libri, firma dell'APK con chiave propria per un'eventuale pubblicazione.

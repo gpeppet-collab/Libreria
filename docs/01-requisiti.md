@@ -1,7 +1,7 @@
 # 01 · Requisiti
 
 **Progetto:** Libreria, catalogo personale di libri su Android
-**Versione documento:** 1.0 (2026-11-11)
+**Versione documento:** 1.1 (2026-11-14)
 **Stato:** approvato per la v1
 
 ## 1. Scopo e contesto
@@ -21,44 +21,52 @@ Scaffali/collezioni, backup cloud, iOS, multiutente, sincronizzazione tra dispos
 
 ## 2. Attori
 
-| Attore             | Descrizione                                                                |
-| ------------------ | -------------------------------------------------------------------------- |
-| Lettore / genitore | L'unica persona che usa l'app. Nessun login, nessun ruolo.                 |
-| Servizi metadati   | Google Books e Open Library, interrogati in sola lettura con il solo ISBN. |
+| Attore             | Descrizione                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| Lettore / genitore | L'unica persona che usa l'app. Nessun login, nessun ruolo.                                         |
+| Servizi metadati   | Google Books, OPAC SBN e Open Library, interrogati in sola lettura con l'ISBN o il titolo cercato. |
 
 ## 3. Requisiti funzionali
 
-| ID   | Requisito                                                                                                                                                                                                                                                                                              | Priorità |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| RF1  | Inserire un libro manualmente: titolo (obbligatorio), autori, ISBN, editore, anno, pagine, copertina, descrizione.                                                                                                                                                                                     | Must     |
-| RF2  | Aggiungere un libro scansionando il codice a barre EAN-13/ISBN con la fotocamera.                                                                                                                                                                                                                      | Must     |
-| RF3  | Se c'è connessione, dopo la scansione (o digitando un ISBN) proporre titolo, autori, copertina e altri dati da Google Books, con fallback su Open Library. L'utente conferma o modifica prima del salvataggio. Senza rete si passa all'inserimento manuale senza errori bloccanti.                     | Must     |
-| RF4  | Stato di lettura per ogni libro: `da_leggere`, `in_lettura`, `letto`, `abbandonato`; date di inizio e fine lettura opzionali.                                                                                                                                                                          | Must     |
-| RF5  | Valutazione da 1 a 5 stelle e note personali in testo libero.                                                                                                                                                                                                                                          | Must     |
-| RF6  | Lista libri con ricerca testuale su titolo/autore/ISBN e filtri combinabili per stato, fascia d'età, tipo e tag; ordinamento per titolo, autore, data inserimento, fascia d'età.                                                                                                                       | Must     |
-| RF7  | Modificare ed eliminare un libro (eliminazione con conferma).                                                                                                                                                                                                                                          | Must     |
-| RF8  | Esportare l'intero catalogo in un file JSON condivisibile con le app del telefono (share sheet), classificazione e tag inclusi.                                                                                                                                                                        | Must     |
-| RF9  | Importare un file JSON esportato dall'app: unione per id/ISBN con scelta "sostituisci" o "mantieni esistente".                                                                                                                                                                                         | Must     |
-| RF10 | Rilevare i duplicati per ISBN in fase di inserimento e avvisare.                                                                                                                                                                                                                                       | Must     |
-| RF11 | **Fascia d'età**: ogni libro ha una fascia d'età scelta da una lista fissa (`0-2`, `3-5`, `6-8`, `9-12`, `13+`, `adulti`) oppure "non indicata".                                                                                                                                                       | Must     |
-| RF12 | **Tipo/genere**: ogni libro ha un tipo scelto da una lista predefinita ma estendibile dall'utente: albo illustrato, libro cartonato, fiaba/favola, primo lettore, romanzo per ragazzi, fumetto, poesia/filastrocche, libro gioco/attività, divulgazione, didattico/scolastico, romanzo, saggio, altro. | Must     |
-| RF13 | **Tag liberi**: zero o più tag per libro (es. "animali", "dinosauri", "buonanotte", "scuola", "regalo nonna"); autocompletamento sui tag già usati; rinomina ed eliminazione tag dalle impostazioni.                                                                                                   | Must     |
-| RF14 | Dalla lista si può aprire una vista raggruppata per fascia d'età o per tipo, con il conteggio dei libri per gruppo; toccando un gruppo si apre la lista filtrata.                                                                                                                                      | Should   |
-| RF15 | Quando il recupero online restituisce categorie (Google Books `categories`, Open Library `subjects`), proporle come tag spuntabili, senza applicarle automaticamente.                                                                                                                                  | Should   |
+| ID   | Requisito                                                                                                                                                                                                                                                                                                            | Priorità |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| RF1  | Inserire un libro manualmente: titolo (obbligatorio), autori, ISBN, editore, anno, pagine, copertina, descrizione.                                                                                                                                                                                                   | Must     |
+| RF2  | Aggiungere un libro scansionando il codice a barre EAN-13/ISBN con la fotocamera.                                                                                                                                                                                                                                    | Must     |
+| RF3  | Se c'è connessione, dopo la scansione (o digitando un ISBN) proporre titolo, autori, copertina e altri dati interrogando insieme Google Books, OPAC SBN e Open Library e unendo i risultati. L'utente conferma o modifica prima del salvataggio. Senza rete si passa all'inserimento manuale senza errori bloccanti. | Must     |
+| RF4  | Stato di lettura per ogni libro: `da_leggere`, `in_lettura`, `letto`, `abbandonato`; date di inizio e fine lettura opzionali.                                                                                                                                                                                        | Must     |
+| RF5  | Valutazione da 1 a 5 stelle e note personali in testo libero.                                                                                                                                                                                                                                                        | Must     |
+| RF6  | Lista libri con ricerca testuale su titolo/autore/ISBN e filtri combinabili per stato, fascia d'età, tipo e tag; ordinamento per titolo, autore, data inserimento, fascia d'età.                                                                                                                                     | Must     |
+| RF7  | Modificare ed eliminare un libro (eliminazione con conferma).                                                                                                                                                                                                                                                        | Must     |
+| RF8  | Esportare l'intero catalogo in un file JSON condivisibile con le app del telefono (share sheet), classificazione e tag inclusi.                                                                                                                                                                                      | Must     |
+| RF9  | Importare un file JSON esportato dall'app: unione per id/ISBN con scelta "sostituisci" o "mantieni esistente".                                                                                                                                                                                                       | Must     |
+| RF10 | Rilevare i duplicati per ISBN in fase di inserimento e avvisare.                                                                                                                                                                                                                                                     | Must     |
+| RF11 | **Fascia d'età**: ogni libro ha una fascia d'età scelta da una lista fissa (`0-2`, `3-5`, `6-8`, `9-12`, `13+`, `adulti`) oppure "non indicata".                                                                                                                                                                     | Must     |
+| RF12 | **Tipo/genere**: ogni libro ha un tipo scelto da una lista predefinita ma estendibile dall'utente: albo illustrato, libro cartonato, fiaba/favola, primo lettore, romanzo per ragazzi, fumetto, poesia/filastrocche, libro gioco/attività, divulgazione, didattico/scolastico, romanzo, saggio, altro.               | Must     |
+| RF13 | **Tag liberi**: zero o più tag per libro (es. "animali", "dinosauri", "buonanotte", "scuola", "regalo nonna"); autocompletamento sui tag già usati; rinomina ed eliminazione tag dalle impostazioni.                                                                                                                 | Must     |
+| RF14 | Dalla lista si può aprire una vista raggruppata per fascia d'età o per tipo, con il conteggio dei libri per gruppo; toccando un gruppo si apre la lista filtrata.                                                                                                                                                    | Should   |
+| RF15 | Quando il recupero online restituisce categorie (Google Books `categories`, Open Library `subjects`), proporle come tag spuntabili, senza applicarle automaticamente.                                                                                                                                                | Should   |
+| RF16 | **Ricerca per titolo**: cercare online per titolo e autore, vedere i risultati di tutte le fonti senza doppioni e scegliere quello giusto, che compila il form. Serve per i libri senza codice o non trovati dall'ISBN.                                                                                              | Must     |
+| RF17 | **Copertina da foto**: scattare una foto o scegliere un'immagine dalla galleria come copertina, con ritaglio; rimuovere la copertina. L'immagine scelta prevale su quelle online.                                                                                                                                    | Must     |
+| RF18 | **Esito della ricerca visibile**: dopo ogni ricerca online il form mostra cosa ha risposto ciascuna fonte (trovato, non trovato, limite richieste, errore, nessuna risposta).                                                                                                                                        | Should   |
+| RF19 | **Chiave Google facoltativa**: nelle impostazioni si può salvare una chiave API personale di Google Books, che resta solo sul telefono.                                                                                                                                                                              | Should   |
+| RF20 | **Libri non classificati**: la vista per gruppo e i filtri permettono di vedere i libri senza fascia d'età o senza tipo.                                                                                                                                                                                             | Should   |
+| RF21 | **Gestione tag completa**: aggiungere un tag dalle impostazioni; nel form i tag esistenti sono visibili e selezionabili senza scrivere.                                                                                                                                                                              | Must     |
+| RF22 | **Tema**: scegliere tra chiaro, scuro o come il telefono; la scelta resta salvata.                                                                                                                                                                                                                                   | Should   |
+| RF23 | **Date dal calendario**: le date di lettura si scelgono dal calendario di sistema, non si scrivono; non sono ammesse date future né una fine precedente all'inizio.                                                                                                                                                  | Should   |
 
 ## 4. Requisiti non funzionali
 
-| ID   | Requisito                                                                                                           |
-| ---- | ------------------------------------------------------------------------------------------------------------------- |
-| RNF1 | Funziona completamente offline; la rete serve solo per RF3 ed è sempre facoltativa.                                 |
-| RNF2 | Nessuna autenticazione, nessun dato inviato a server propri; verso Google Books e Open Library viaggia solo l'ISBN. |
-| RNF3 | Android 8+ (API 26+); build con EAS Build o `expo run:android`; distribuzione via APK.                              |
-| RNF4 | Lista fluida fino ad almeno 5.000 libri (lista virtualizzata, query SQL indicizzate).                               |
-| RNF5 | Migrazioni di schema versionate: aggiornare l'app non perde dati.                                                   |
-| RNF6 | Lingua interfaccia: italiano; stringhe centralizzate, pronte per i18n.                                              |
-| RNF7 | Copertine salvate in locale nel file system dell'app, non solo come URL remoto.                                     |
-| RNF8 | TypeScript strict, lint, test unitari su dominio e repository.                                                      |
-| RNF9 | Permessi Android richiesti: solo `CAMERA`, chiesto al primo uso dello scanner.                                      |
+| ID   | Requisito                                                                                                                                                                                            |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RNF1 | Funziona completamente offline; la rete serve solo per RF3 ed è sempre facoltativa.                                                                                                                  |
+| RNF2 | Nessuna autenticazione, nessun dato inviato a server propri; verso Google Books, OPAC SBN e Open Library viaggiano solo l'ISBN o il testo cercato (più la chiave Google, se configurata).            |
+| RNF3 | Android 8+ (API 26+); build con EAS Build o `expo run:android`; distribuzione via APK.                                                                                                               |
+| RNF4 | Lista fluida fino ad almeno 5.000 libri (lista virtualizzata, query SQL indicizzate).                                                                                                                |
+| RNF5 | Migrazioni di schema versionate: aggiornare l'app non perde dati.                                                                                                                                    |
+| RNF6 | Lingua interfaccia: italiano; stringhe centralizzate, pronte per i18n.                                                                                                                               |
+| RNF7 | Copertine salvate in locale nel file system dell'app, non solo come URL remoto.                                                                                                                      |
+| RNF8 | TypeScript strict, lint, test unitari su dominio e repository.                                                                                                                                       |
+| RNF9 | Permessi Android: `CAMERA` (scanner e foto della copertina), chiesto al primo uso, più `INTERNET` e `VIBRATE`, che Android concede senza chiedere. Microfono e archivio sono esclusi esplicitamente. |
 
 ## 5. User story
 
@@ -69,6 +77,8 @@ Scaffali/collezioni, backup cloud, iOS, multiutente, sincronizzazione tra dispos
 - **US5** Come lettore, voglio segnare un libro come "in lettura" e poi "letto" con una valutazione, per tenere traccia di cosa ho letto.
 - **US6** Come lettore, voglio cercare rapidamente un titolo per sapere se lo possiedo già, anche in libreria senza rete.
 - **US7** Come lettore, voglio esportare tutto in un file per non perdere i dati cambiando telefono.
+- **US8** Come genitore, voglio aggiungere un vecchio libro senza codice a barre cercandolo per titolo e fotografandone la copertina.
+- **US9** Come genitore, voglio vedere quali libri non ho ancora classificato per fascia d'età, per completarli.
 
 ## 6. Criteri di accettazione (estratto)
 

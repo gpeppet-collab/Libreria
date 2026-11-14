@@ -2,7 +2,7 @@
   "expo": {
     "name": "Libreria",
     "slug": "libreria",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "scheme": "libreria",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,7 @@
     "android": {
       "package": "it.libreria.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#C2410C",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -43,6 +43,15 @@
           "cameraPermission": "Libreria usa la fotocamera per fotografare la copertina dei libri.",
           "photosPermission": "Libreria accede alle foto per scegliere la copertina dei libri.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#C2410C"
         }
       ]
     ],

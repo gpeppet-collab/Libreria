@@ -1,6 +1,6 @@
 # 02 · Architettura
 
-**Versione documento:** 1.0 (2026-11-11)
+**Versione documento:** 1.1 (2026-11-14)
 Decisioni motivate negli ADR in [docs/adr](adr/).
 
 ## 1. Vista d'insieme
@@ -28,17 +28,20 @@ Libreria è un'app **Android**, **locale**, **a singolo utente**. Non c'è backe
 
 ## 2. Stack
 
-| Area        | Scelta                                                      | Motivo                                                              |
-| ----------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| Runtime     | Expo SDK 58, React Native 0.88, React 19, TypeScript strict | un solo linguaggio, build Android senza toolchain nativa (ADR-0001) |
-| Navigazione | expo-router (file-based, typed routes)                      | route = file, deep link gratis                                      |
-| Persistenza | expo-sqlite con SQL esplicito, migrazioni versionate        | leggero, trasparente, testabile (ADR-0002)                          |
-| Scanner     | expo-camera (barcode EAN-13)                                | modulo ufficiale Expo                                               |
-| File        | expo-file-system, expo-sharing, expo-document-picker        | export/import e copertine locali                                    |
-| Rete        | fetch + @react-native-community/netinfo                     | tentare il lookup solo se online (ADR-0003)                         |
-| Stato       | TanStack Query sopra i repository                           | cache e invalidazione senza store globale                           |
-| Id          | expo-crypto `randomUUID()`                                  | id stabili anche attraverso export/import                           |
-| Qualità     | ESLint (eslint-config-expo), Prettier, Jest (jest-expo)     | RNF8                                                                |
+| Area              | Scelta                                                      | Motivo                                                              |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| Runtime           | Expo SDK 58, React Native 0.88, React 19, TypeScript strict | un solo linguaggio, build Android senza toolchain nativa (ADR-0001) |
+| Navigazione       | expo-router (file-based, typed routes)                      | route = file, deep link gratis                                      |
+| Persistenza       | expo-sqlite con SQL esplicito, migrazioni versionate        | leggero, trasparente, testabile (ADR-0002)                          |
+| Scanner           | expo-camera (barcode EAN-13)                                | modulo ufficiale Expo                                               |
+| Copertina da foto | expo-image-picker                                           | fotocamera e galleria con ritaglio                                  |
+| Date              | @react-native-community/datetimepicker                      | calendario di sistema                                               |
+| Tema e avvio      | expo-system-ui, expo-splash-screen                          | tema di sistema su Android, schermata di avvio                      |
+| File              | expo-file-system, expo-sharing, expo-document-picker        | export/import e copertine locali                                    |
+| Rete              | fetch + @react-native-community/netinfo                     | tentare il lookup solo se online (ADR-0003)                         |
+| Stato             | TanStack Query sopra i repository                           | cache e invalidazione senza store globale                           |
+| Id                | expo-crypto `randomUUID()`                                  | id stabili anche attraverso export/import                           |
+| Qualità           | ESLint (eslint-config-expo), Prettier, Jest (jest-expo)     | RNF8                                                                |
 
 ## 3. Livelli e regola di dipendenza
 
@@ -143,6 +146,18 @@ La schermata `/` tiene un `BookQuery` in stato locale; `useBooks(query)` lo pass
 
 `pickImportFile()` (selettore → lettura → `parseLibraryExport`) produce un'anteprima con totale, nuovi, esistenti e tipi da creare; l'utente sceglie la strategia; `applyImport()` crea i tipi mancanti, chiama `BookRepository.bulkUpsert(books, strategy)` in una sola transazione (corrispondenza per `id` oppure per `isbn`) e salva le copertine incluse nel file. Esito riepilogato: inseriti / sostituiti / saltati.
 
+### 5.5 Ricerca online: fonti unite (RF3, RF16, RF18)
+
+`MergingMetadataService` interroga in parallelo Google Books, OPAC SBN e Open Library entro 10 secondi. Per ISBN (`lookupDetailed`) la prima fonte che trova il libro fa da base e le altre riempiono i campi mancanti; per titolo (`searchByText`) i risultati si concatenano e i doppioni si fondono per ISBN o per titolo e primo autore. Ogni chiamata restituisce anche l'esito per fonte, che il form mostra. Google Books usa, se presente, la chiave API salvata nelle impostazioni: senza chiave la quota anonima condivisa è spesso esaurita (vedi ADR-0003).
+
+### 5.6 Copertine (RF17, RNF7)
+
+Tre origini, in ordine di precedenza: immagine scelta dall'utente (fotocamera o galleria con ritaglio 2:3, `expo-image-picker`), copertine trovate online (lista di candidati provati in ordine, con scarto dei file sotto 1 KB), nessuna. I file stanno in `documents/covers/` con nome unico per ogni salvataggio, così l'immagine sostituita non resta in cache. Una copertina salvata che non si riesce a mostrare conta come assente e viene sostituita alla ricerca successiva.
+
+### 5.7 Impostazioni e tema (RF19, RF22)
+
+La tabella `settings` (migrazione 2) conserva chiave Google e tema. Il tema passa da `ThemePreferenceContext` (`src/ui/theme.ts`): `useTheme()` combina la preferenza con il tema di sistema; `expo-system-ui` permette ad Android di seguire il tema del telefono.
+
 ## 6. Gestione errori e offline
 
 - Rete: `MetadataService` non lancia mai; restituisce `null` e la UI prosegue in manuale.
@@ -156,10 +171,15 @@ Nessun account, nessun server proprio, nessuna telemetria. Verso Google Books e 
 ## 8. Build e distribuzione
 
 - Sviluppo: `npx expo start` con **development build** (expo-camera e expo-sqlite richiedono moduli nativi; Expo Go può non bastare).
-- Build Android: `npx expo run:android` in locale oppure EAS Build (`eas build -p android --profile preview` per un APK installabile).
+- Build Android senza PC: flusso GitHub Actions `.github/workflows/android-apk.yml`, avviato a mano, che allega l'APK all'esecuzione (vedi README).
+- In alternativa: `npx expo run:android` in locale oppure EAS Build (`eas build -p android --profile preview` per un APK installabile).
 - Le cartelle `android/` e `ios/` sono generate (Continuous Native Generation) e non vengono versionate.
 
-## 9. Test
+## 9. Icona e schermata di avvio
+
+Le immagini in `assets/` sono generate da `scripts/make-icons.js` (disegno SVG rasterizzato): icona, icona adattiva Android (primo piano, sfondo, monocromatica) e logo della schermata di avvio, su fondo arancio `#C2410C`. Per cambiarle si modifica lo script e lo si riesegue.
+
+## 10. Test
 
 | Livello    | Cosa                                      | Strumento                     |
 | ---------- | ----------------------------------------- | ----------------------------- |

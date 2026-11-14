@@ -1,6 +1,6 @@
 # 03 · Interfacce
 
-**Versione documento:** 1.0 (2026-11-11)
+**Versione documento:** 1.1 (2026-11-14)
 I contratti qui descritti esistono come codice in `src/domain`, `src/data` e `src/services`: il codice è la fonte di verità, questo documento ne spiega l'uso.
 
 ## 1. Tipi di dominio (`src/domain/types.ts`)
@@ -171,6 +171,52 @@ Timeout complessivo: `METADATA_LOOKUP_TIMEOUT_MS = 5000`. Ordine: Google Books, 
 
 Implementazioni: `GoogleBooksProvider.ts`, `OpenLibraryProvider.ts` (ricevono `fetch` iniettabile), `MetadataService.ts` (`FallbackMetadataService`: normalizza l'ISBN, verifica `isOnline`, prova i provider in ordine con un solo `AbortController` e timeout complessivo, registra gli errori con `onError` e restituisce sempre `null` in caso di problemi). `appMetadataService.ts` espone `getMetadataService()` cablato con NetInfo. `toBook.ts` (`metadataToBookFields`) converte il risultato nei soli campi bibliografici del form; i `suggestedTags` restano separati per la scelta dell'utente (RF15). Le categorie gerarchiche ("Juvenile Fiction / Animals") vengono spezzate e normalizzate in tag (massimo 10).
 
+### Aggiornamenti 0.2 – 0.6 (interfacce aggiunte)
+
+```ts
+// Ricerca: esiti per fonte e ricerca per titolo (services/metadata/MetadataProvider.ts)
+type MetadataSource = 'google_books' | 'open_library' | 'sbn';
+type LookupStatus = 'found' | 'not_found' | 'quota' | 'error' | 'timeout';
+type BookSearchResult = Omit<BookMetadata, 'isbn'> & { isbn: string | null };
+
+interface MetadataProvider {
+  lookupByIsbn(isbn, signal?): Promise<BookMetadata | null>;
+  searchByText(text, signal?): Promise<BookSearchResult[]>;
+}
+interface MetadataService {
+  lookup(isbn): Promise<BookMetadata | null>;
+  lookupDetailed(isbn): Promise<{ metadata; coverUrls: string[]; outcomes: ProviderOutcome[]; offline: boolean }>;
+  searchByText(text): Promise<{ results: BookSearchResult[]; outcomes: ProviderOutcome[]; offline: boolean }>;
+  coverUrlsFor(result: BookSearchResult): string[];
+}
+
+// Filtro "non indicata/o" (domain/types.ts): UNSET = 'none'
+interface BookQuery { ageRange?: AgeRange | 'none'; bookTypeId?: string /* anche 'none' */; /* … */ }
+
+// Impostazioni (data/SettingsRepository.ts), tabella settings (migrazione 2)
+interface SettingsRepository { get(key): Promise<string | null>; set(key, value | null): Promise<void>; }
+// chiavi: SETTING_GOOGLE_BOOKS_API_KEY, SETTING_THEME
+
+// Tag: creazione esplicita (data/TagRepository.ts)
+interface TagRepository { ensure(name): Promise<Tag>; /* … findAll, suggest, rename, remove */ }
+
+// Copertine e file (services/covers, services/files)
+interface FilePort { pickImage(source: 'camera' | 'library'): Promise<PickedFile | null>; copy(src, dest): Promise<void>; /* … */ }
+class CoverService {
+  downloadFirst(urls, bookId, allowRemote?): Promise<string | null>; // prova i candidati in ordine
+  pickImage(source): Promise<string | null>;
+  storeFromFile(sourceUri, bookId, previousPath?): Promise<string | null>;
+  displayUri(path): string | null;
+}
+
+// Date (domain/dates.ts): toIsoDate, parseIsoDate, isIsoDate, formatDateIt, todayIso
+// Tema (ui/theme.ts): ThemePreference = 'system' | 'light' | 'dark', ThemePreferenceContext, useTheme()
+```
+
+Endpoint aggiunti: `https://opac.sbn.it/opacmobilegw/search.json?isbn={isbn}` e `…?any={testo}&type=0&start=0&rows=10` (OPAC SBN); `https://openlibrary.org/search.json?q={testo}&limit=10&fields=…` (Open Library); Google Books con `&country=IT`, `&maxResults=10` per la ricerca e `&key=` se configurata.
+
+Componenti nuovi in `src/ui/`: `DateField` (con `datePicker.ts` / `.web.ts`), `SearchResultsList`, sezione Copertina e "I tuoi tag" in `BookForm` / `TagInput`. Hook nuovi: `useMetadataSearch`, `useSetting`, `useTagMutations().create`.
+
 ## 5. Formato export/import (`src/domain/export.ts`)
 
 ```ts
@@ -227,4 +273,12 @@ Parametri di navigazione (convertiti da `parseBookQueryParams` / `bookQueryToPar
 | RF13     | `Tag`, `TagRepository`, `normalizeTagName`, `/settings/tags`                        |
 | RF14     | `BookRepository.countBy`, `/groups`                                                 |
 | RF15     | `BookMetadata.suggestedTags`, `/book/new`                                           |
+| RF16     | `MetadataService.searchByText`, `SearchResultsList`, "Cerca per titolo" nel form    |
+| RF17     | `FilePort.pickImage`, `CoverService.storeFromFile`, sezione Copertina del form      |
+| RF18     | `LookupResult.outcomes`, messaggio sotto "Cerca online"                             |
+| RF19     | `SettingsRepository`, `GoogleBooksProvider({ getApiKey })`, `/settings`             |
+| RF20     | `UNSET`, `BookRepository.findAll`, `/groups`, `FilterPanel`                         |
+| RF21     | `TagRepository.ensure`, `/settings/tags`, `TagInput`                                |
+| RF22     | `ThemePreferenceContext`, `SETTING_THEME`, `/settings`                              |
+| RF23     | `DateField`, `domain/dates.ts`                                                      |
 | RNF5     | `MIGRATIONS`, `getDatabase`                                                         |
