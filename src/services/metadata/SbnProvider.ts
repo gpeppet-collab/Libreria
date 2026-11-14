@@ -1,6 +1,9 @@
+import { normalizeIsbn } from '@/domain/isbn';
+
 import {
   METADATA_ENDPOINTS,
   type BookMetadata,
+  type BookSearchResult,
   type FetchFn,
   type MetadataProvider,
 } from './MetadataProvider';
@@ -16,6 +19,7 @@ interface SbnRecord {
   autorePrincipale?: unknown;
   pubblicazione?: unknown;
   copertina?: unknown;
+  isbn?: unknown;
 }
 
 /**
@@ -32,16 +36,28 @@ export class SbnProvider implements MetadataProvider {
     if (!res.ok) throw new Error(`SBN HTTP ${res.status}`);
     const body = (await res.json()) as SbnResponse;
     const record = body.briefRecords?.[0];
-    if (!record) return null;
+    const mapped = record ? this.toResult(record) : null;
+    return mapped ? { ...mapped, isbn } : null;
+  }
 
+  async searchByText(text: string, signal?: AbortSignal): Promise<BookSearchResult[]> {
+    const res = await this.fetchFn(METADATA_ENDPOINTS.sbnSearch(text), { signal });
+    if (!res.ok) throw new Error(`SBN HTTP ${res.status}`);
+    const body = (await res.json()) as SbnResponse;
+    return (body.briefRecords ?? []).flatMap((record) => {
+      const mapped = this.toResult(record);
+      const rawIsbn = asString(record.isbn);
+      return mapped ? [{ ...mapped, isbn: rawIsbn ? normalizeIsbn(rawIsbn) : null }] : [];
+    });
+  }
+
+  private toResult(record: SbnRecord): Omit<BookSearchResult, 'isbn'> | null {
     const parsed = parseSbnTitle(asString(record.titolo) ?? '');
     if (!parsed.title) return null;
     const mainAuthor = cleanSbnAuthor(asString(record.autorePrincipale));
     const publication = parseSbnPublication(asString(record.pubblicazione));
     const cover = cleanCoverUrl(record.copertina);
-
     return {
-      isbn,
       title: parsed.title,
       authors: mainAuthor ? [mainAuthor] : parsed.authors,
       publisher: publication.publisher,

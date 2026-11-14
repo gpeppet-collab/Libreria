@@ -124,10 +124,12 @@ describe('MergingMetadataService', () => {
     const hanging: MetadataProvider = {
       source: 'google_books',
       lookupByIsbn: () => new Promise<BookMetadata | null>(() => {}),
+      searchByText: async () => [],
     };
     const quick: MetadataProvider = {
       source: 'sbn',
       lookupByIsbn: async (isbn) => ({ isbn, title: 'Veloce', authors: [], source: 'sbn' }),
+      searchByText: async () => [],
     };
     const svc = new MergingMetadataService({ providers: [hanging, quick], timeoutMs: 20 });
     const start = Date.now();

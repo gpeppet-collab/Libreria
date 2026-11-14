@@ -1,12 +1,12 @@
 import type { NewBook } from '@/domain/types';
 
-import type { BookMetadata } from './MetadataProvider';
+import type { BookMetadata, BookSearchResult } from './MetadataProvider';
 
 /**
  * Campi del form precompilabili da un risultato del lookup (RF3).
  * Non tocca classificazione, stato, note: li sceglie l'utente.
  */
-export function metadataToBookFields(meta: BookMetadata): Partial<NewBook> {
+export function metadataToBookFields(meta: BookMetadata | BookSearchResult): Partial<NewBook> {
   return {
     isbn: meta.isbn,
     title: meta.title,

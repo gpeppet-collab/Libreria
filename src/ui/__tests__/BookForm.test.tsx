@@ -236,4 +236,62 @@ describe('BookForm', () => {
     await fireEvent.press(screen.getByText(t.common.save));
     expect(onSubmit.mock.calls[1]![0].book.startedAt).toBeNull();
   });
+
+  it('cerca per titolo, mostra i risultati e applica quello scelto', async () => {
+    ctx.searchResults.push(
+      {
+        isbn: '9788867142323',
+        title: 'Il Gruffalò',
+        authors: ['Julia Donaldson'],
+        publisher: 'Emme',
+        publishedYear: 2014,
+        coverUrl: 'https://example.org/g.jpg',
+        source: 'sbn',
+        suggestedTags: ['mostri'],
+      },
+      {
+        isbn: null,
+        title: 'Gruffalò e la sua piccolina',
+        authors: ['Julia Donaldson'],
+        source: 'google_books',
+      },
+    );
+    const onSubmit = jest.fn<void, [BookFormResult]>();
+    await renderWithServices(<BookForm onSubmit={onSubmit} />, ctx.services);
+    expect(screen.getByText(t.form.searchHint)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText(t.form.title), 'gruffalo');
+    await fireEvent.press(screen.getByText(t.form.searchByTitle));
+    expect(await screen.findByText(t.form.searchResults(2))).toBeTruthy();
+    expect(screen.getByText('Gruffalò e la sua piccolina')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText('Il Gruffalò'));
+    expect(await screen.findByText(t.form.searchApplied('OPAC SBN'))).toBeTruthy();
+    expect(screen.queryByText('Gruffalò e la sua piccolina')).toBeNull();
+    expect(screen.getByLabelText(t.form.title).props.value).toBe('Il Gruffalò');
+    expect(screen.getByLabelText(t.form.isbn).props.value).toBe('9788867142323');
+    expect(screen.getByText('+ mostri')).toBeTruthy();
+
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+      book: {
+        title: 'Il Gruffalò',
+        isbn: '9788867142323',
+        authors: ['Julia Donaldson'],
+        publisher: 'Emme',
+        publishedYear: 2014,
+        tags: [],
+      },
+      coverUrls: ['https://example.org/g.jpg'],
+    });
+  });
+
+  it('senza risultati lo dice, con l esito per fonte', async () => {
+    await renderWithServices(<BookForm onSubmit={jest.fn()} />, ctx.services);
+    await fireEvent.changeText(screen.getByLabelText(t.form.title), 'titolo inesistente');
+    await fireEvent.press(screen.getByText(t.form.searchByTitle));
+    expect(
+      await screen.findByText(/Nessun risultato online[\s\S]*Google Books: non trovato/),
+    ).toBeTruthy();
+  });
 });

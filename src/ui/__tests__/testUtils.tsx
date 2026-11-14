@@ -10,7 +10,11 @@ import type { AppServices } from '@/services/appServices';
 import { MemoryFilePort } from '@/services/__tests__/MemoryFilePort';
 import { CoverService } from '@/services/covers/CoverService';
 import { ExportImportService } from '@/services/exportImport/ExportImportService';
-import type { BookMetadata, MetadataService } from '@/services/metadata/MetadataProvider';
+import type {
+  BookMetadata,
+  BookSearchResult,
+  MetadataService,
+} from '@/services/metadata/MetadataProvider';
 
 export interface TestContext {
   db: NodeSqliteDatabase;
@@ -18,6 +22,8 @@ export interface TestContext {
   files: MemoryFilePort;
   /** Risposte del servizio metadati per ISBN. */
   metadata: Map<string, BookMetadata | null>;
+  /** Risultati della ricerca per titolo (qualunque testo). */
+  searchResults: BookSearchResult[];
 }
 
 /** Servizi reali su SQLite in memoria e file system in memoria; metadati simulati. */
@@ -27,7 +33,14 @@ export async function createTestServices(): Promise<TestContext> {
   const covers = new CoverService(files);
   const repos = createRepositories(db, { onBookRemoved: (b) => covers.remove(b.coverPath) });
   const metadata = new Map<string, BookMetadata | null>();
+  const searchResults: BookSearchResult[] = [];
   const metadataService: MetadataService = {
+    searchByText: async () => ({
+      results: searchResults,
+      outcomes: [{ source: 'google_books', status: searchResults.length ? 'found' : 'not_found' }],
+      offline: false,
+    }),
+    coverUrlsFor: (r) => (r.coverUrl ? [r.coverUrl] : []),
     lookup: async (isbn) => metadata.get(isbn) ?? null,
     lookupDetailed: async (isbn) => {
       const m = metadata.get(isbn) ?? null;
@@ -43,6 +56,7 @@ export async function createTestServices(): Promise<TestContext> {
     db,
     files,
     metadata,
+    searchResults,
     services: {
       repos,
       covers,

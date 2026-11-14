@@ -4,6 +4,7 @@ import {
   METADATA_ENDPOINTS,
   QuotaExceededError,
   type BookMetadata,
+  type BookSearchResult,
   type FetchFn,
   type MetadataProvider,
 } from './MetadataProvider';
@@ -55,13 +56,25 @@ export class GoogleBooksProvider implements MetadataProvider {
     }
     if (!info) return null;
 
+    const mapped = this.toResult(info);
+    return mapped ? { ...mapped, isbn } : null;
+  }
+
+  async searchByText(text: string, signal?: AbortSignal): Promise<BookSearchResult[]> {
+    const apiKey = await this.getApiKey().catch(() => null);
+    const volumes = await this.query(encodeURIComponent(text), apiKey, signal, 10);
+    return volumes.flatMap((v) => {
+      const r = this.toResult(v);
+      return r ? [{ ...r, isbn: isbnOf(v) }] : [];
+    });
+  }
+
+  private toResult(info: VolumeInfo): Omit<BookSearchResult, 'isbn'> | null {
     const title = asString(info.title);
     if (!title) return null;
     const subtitle = asString(info.subtitle);
     const images = (info.imageLinks ?? {}) as Record<string, unknown>;
-
     return {
-      isbn,
       title: subtitle ? `${title}: ${subtitle}` : title,
       authors: asStringArray(info.authors),
       publisher: asString(info.publisher),
@@ -78,8 +91,11 @@ export class GoogleBooksProvider implements MetadataProvider {
     q: string,
     apiKey: string | null,
     signal?: AbortSignal,
+    maxResults?: number,
   ): Promise<VolumeInfo[]> {
-    const res = await this.fetchFn(METADATA_ENDPOINTS.googleBooks(q, apiKey), { signal });
+    const res = await this.fetchFn(METADATA_ENDPOINTS.googleBooks(q, apiKey, maxResults), {
+      signal,
+    });
     if (res.status === 429 || res.status === 403) throw new QuotaExceededError(this.source);
     if (!res.ok) throw new Error(`Google Books HTTP ${res.status}`);
     const body = (await res.json()) as GoogleVolumesResponse;
@@ -87,10 +103,19 @@ export class GoogleBooksProvider implements MetadataProvider {
   }
 }
 
-function hasIsbn(info: VolumeInfo, isbn: string): boolean {
+function isbnsOf(info: VolumeInfo): string[] {
   const ids = Array.isArray(info.industryIdentifiers) ? info.industryIdentifiers : [];
-  return ids.some((id) => {
+  return ids.flatMap((id) => {
     const value = (id as { identifier?: unknown } | null)?.identifier;
-    return typeof value === 'string' && normalizeIsbn(value) === isbn;
+    const isbn = typeof value === 'string' ? normalizeIsbn(value) : null;
+    return isbn ? [isbn] : [];
   });
+}
+
+function isbnOf(info: VolumeInfo): string | null {
+  return isbnsOf(info)[0] ?? null;
+}
+
+function hasIsbn(info: VolumeInfo, isbn: string): boolean {
+  return isbnsOf(info).includes(isbn);
 }

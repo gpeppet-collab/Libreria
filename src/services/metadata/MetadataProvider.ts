@@ -37,6 +37,9 @@ export class QuotaExceededError extends Error {
   }
 }
 
+/** Risultato di una ricerca per titolo: come `BookMetadata`, ma l'ISBN può mancare. */
+export type BookSearchResult = Omit<BookMetadata, 'isbn'> & { isbn: string | null };
+
 export interface MetadataProvider {
   readonly source: MetadataSource;
   /**
@@ -44,6 +47,8 @@ export interface MetadataProvider {
    * Può lanciare per errori di rete o risposte HTTP non valide: è il servizio a gestirli.
    */
   lookupByIsbn(isbn: string, signal?: AbortSignal): Promise<BookMetadata | null>;
+  /** Ricerca libera per titolo e/o autore. Può lanciare come `lookupByIsbn`. */
+  searchByText(text: string, signal?: AbortSignal): Promise<BookSearchResult[]>;
 }
 
 export type LookupStatus = 'found' | 'not_found' | 'quota' | 'error' | 'timeout';
@@ -64,6 +69,15 @@ export interface LookupResult {
   offline: boolean;
 }
 
+export interface SearchResult {
+  /** Risultati di tutte le fonti, senza doppioni, nell'ordine di preferenza delle fonti. */
+  results: BookSearchResult[];
+  outcomes: ProviderOutcome[];
+  offline: boolean;
+}
+
+export const MAX_SEARCH_RESULTS = 15;
+
 export interface MetadataService {
   /** Come `lookupDetailed`, ma restituisce solo i dati. Non lancia mai. */
   lookup(isbn: string): Promise<BookMetadata | null>;
@@ -73,14 +87,19 @@ export interface MetadataService {
    * riempiono i campi mancanti. Non lancia mai.
    */
   lookupDetailed(isbn: string): Promise<LookupResult>;
+  /** Ricerca per titolo e/o autore su tutte le fonti (RF16). Non lancia mai. */
+  searchByText(text: string): Promise<SearchResult>;
+  /** Copertine candidate per un risultato di ricerca. */
+  coverUrlsFor(result: BookSearchResult): string[];
 }
 
 export const METADATA_LOOKUP_TIMEOUT_MS = 10000;
 
 /** Endpoint usati (sola lettura). Verso questi host viaggia solo l'ISBN (più l'eventuale chiave Google). */
 export const METADATA_ENDPOINTS = {
-  googleBooks: (query: string, apiKey?: string | null) =>
+  googleBooks: (query: string, apiKey?: string | null, maxResults?: number) =>
     `https://www.googleapis.com/books/v1/volumes?q=${query}&country=IT` +
+    (maxResults ? `&maxResults=${maxResults}` : '') +
     (apiKey ? `&key=${encodeURIComponent(apiKey)}` : ''),
   openLibrary: (isbn: string) =>
     `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
@@ -89,4 +108,9 @@ export const METADATA_ENDPOINTS = {
     `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`,
   /** Catalogo del Servizio Bibliotecario Nazionale (buona copertura dei libri italiani). */
   sbn: (isbn: string) => `https://opac.sbn.it/opacmobilegw/search.json?isbn=${isbn}`,
+  sbnSearch: (text: string) =>
+    `https://opac.sbn.it/opacmobilegw/search.json?any=${encodeURIComponent(text)}&type=0&start=0&rows=10`,
+  openLibrarySearch: (text: string) =>
+    `https://openlibrary.org/search.json?q=${encodeURIComponent(text)}&limit=10` +
+    '&fields=title,author_name,isbn,publisher,first_publish_year,number_of_pages_median,cover_i',
 } as const;

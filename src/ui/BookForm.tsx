@@ -16,9 +16,9 @@ import {
 } from '@/domain/types';
 import { useBookTypes } from '@/hooks/useBookTypes';
 import { useServices } from '@/hooks/ServicesContext';
-import { useMetadataLookup } from '@/hooks/useMetadataLookup';
+import { useMetadataLookup, useMetadataSearch } from '@/hooks/useMetadataLookup';
 import { t } from '@/i18n/it';
-import type { LookupResult } from '@/services/metadata/MetadataProvider';
+import type { BookSearchResult, LookupResult } from '@/services/metadata/MetadataProvider';
 import { metadataToBookFields } from '@/services/metadata/toBook';
 
 import { Button } from './Button';
@@ -28,6 +28,7 @@ import { DateField } from './DateField';
 import { ErrorBanner } from './ErrorBanner';
 import { Field } from './Field';
 import { RatingStars } from './RatingStars';
+import { SearchResultsList } from './SearchResultsList';
 import { TagInput } from './TagInput';
 import { AppText, Card, Row } from './Themed';
 import { AGE_RANGE_COLORS, useTheme } from './theme';
@@ -117,6 +118,10 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const bookTypes = useBookTypes();
   const lookup = useMetadataLookup();
+  const search = useMetadataSearch();
+  const { metadata } = useServices();
+  const [showResults, setShowResults] = useState(false);
+  const [appliedFrom, setAppliedFrom] = useState<string | null>(null);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -145,6 +150,45 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       },
     });
   };
+
+  const runSearch = () => {
+    setAppliedFrom(null);
+    setShowResults(true);
+    search.mutate([form.title, form.authors].filter((v) => v.trim()).join(' '));
+  };
+
+  /** Usa un risultato scelto dall'utente: i suoi dati sostituiscono quelli bibliografici del form. */
+  const applySearchResult = (r: BookSearchResult) => {
+    const fields = metadataToBookFields(r);
+    setForm((f) => ({
+      ...f,
+      isbn: fields.isbn ?? f.isbn,
+      title: fields.title ?? f.title,
+      authors: fields.authors?.length ? fields.authors.join(', ') : f.authors,
+      publisher: fields.publisher ?? f.publisher,
+      publishedYear: fields.publishedYear ? String(fields.publishedYear) : f.publishedYear,
+      pageCount: fields.pageCount ? String(fields.pageCount) : f.pageCount,
+      description: fields.description ?? f.description,
+    }));
+    setCoverUrls(metadata.coverUrlsFor(r));
+    setOnlineCoverMissing(!r.coverUrl);
+    setSuggestedTags(r.suggestedTags ?? []);
+    setShowResults(false);
+    setAppliedFrom(t.sources[r.source]);
+  };
+
+  const searchText = form.title.trim();
+  const searchMessage = appliedFrom
+    ? t.form.searchApplied(appliedFrom)
+    : search.isPending
+      ? t.form.lookingUp
+      : search.isSuccess && showResults
+        ? search.data.offline
+          ? t.form.lookupOffline
+          : search.data.results.length
+            ? t.form.searchResults(search.data.results.length)
+            : `${t.form.searchNone}\n${search.data.outcomes.map((o) => `${t.sources[o.source]}: ${t.form.lookupStatus[o.status]}`).join(' · ')}`
+        : null;
 
   // Da scansione: ricerca automatica all'apertura.
   useEffect(() => {
@@ -252,6 +296,30 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
           onChangeText={(v) => set('title', v)}
           error={touched ? errors.title : null}
         />
+        <Row>
+          <Button
+            title={t.form.searchByTitle}
+            variant="secondary"
+            compact
+            loading={search.isPending}
+            disabled={searchText.length < 3}
+            onPress={runSearch}
+          />
+          <AppText variant="small" style={{ flex: 1 }}>
+            {searchMessage ?? t.form.searchHint}
+          </AppText>
+        </Row>
+        {showResults && search.isSuccess && search.data.results.length > 0 ? (
+          <>
+            <SearchResultsList results={search.data.results} onSelect={applySearchResult} />
+            <Button
+              title={t.form.searchClose}
+              variant="ghost"
+              compact
+              onPress={() => setShowResults(false)}
+            />
+          </>
+        ) : null}
         <Field
           label={t.form.authors}
           value={form.authors}

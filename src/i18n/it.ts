@@ -76,6 +76,13 @@ export const t = {
     lookingUp: 'Ricerca in corso…',
     lookupFound: (source: string) => `Dati trovati su ${source}. Controlla e completa.`,
     lookupNotFound: 'Nessun dato trovato online. Compila a mano.',
+    searchByTitle: 'Cerca per titolo',
+    searchHint: 'Scrivi titolo (e autore) e cerca online: utile per i libri senza codice.',
+    searchNone: 'Nessun risultato online per questo titolo.',
+    searchResults: (n: number) =>
+      n === 1 ? '1 risultato: toccalo per usarlo' : `${n} risultati: tocca quello giusto`,
+    searchClose: 'Chiudi risultati',
+    searchApplied: (source: string) => `Dati presi da ${source}. Controlla e completa.`,
     lookupOffline: 'Telefono senza rete: ricerca online non eseguita.',
     lookupQuotaHint:
       'Google Books ha esaurito le richieste anonime: una chiave gratuita in Impostazioni lo rende affidabile.',
