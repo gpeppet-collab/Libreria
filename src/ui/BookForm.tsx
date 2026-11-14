@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
+import { isIsoDate } from '@/domain/dates';
 import { formatIsbn13, normalizeIsbn } from '@/domain/isbn';
 import {
   AGE_RANGES,
@@ -23,6 +24,7 @@ import { metadataToBookFields } from '@/services/metadata/toBook';
 import { Button } from './Button';
 import { ChipGroup } from './Chip';
 import { CoverImage } from './CoverImage';
+import { DateField } from './DateField';
 import { ErrorBanner } from './ErrorBanner';
 import { Field } from './Field';
 import { RatingStars } from './RatingStars';
@@ -64,8 +66,6 @@ interface FormState {
   finishedAt: string;
   notes: string;
 }
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function fromBook(book: Book | null | undefined, isbn?: string): FormState {
   return {
@@ -163,8 +163,13 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
     () => ({
       title: !form.title.trim() ? t.form.titleRequired : null,
       isbn: form.isbn.trim() && !isbnNormalized ? t.form.invalidIsbn : null,
-      startedAt: form.startedAt && !DATE_RE.test(form.startedAt) ? t.form.invalidDate : null,
-      finishedAt: form.finishedAt && !DATE_RE.test(form.finishedAt) ? t.form.invalidDate : null,
+      startedAt: form.startedAt && !isIsoDate(form.startedAt) ? t.form.invalidDate : null,
+      finishedAt:
+        form.finishedAt && !isIsoDate(form.finishedAt)
+          ? t.form.invalidDate
+          : form.startedAt && form.finishedAt && form.finishedAt < form.startedAt
+            ? t.form.finishedBeforeStarted
+            : null,
     }),
     [form, isbnNormalized],
   );
@@ -212,8 +217,6 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       setRemoveCover(false);
     }
   };
-
-  const today = () => new Date().toISOString().slice(0, 10);
 
   return (
     <View style={{ gap: spacing.md }}>
@@ -365,40 +368,18 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
         />
         <AppText variant="label">{t.form.rating}</AppText>
         <RatingStars value={form.rating} onChange={(v) => set('rating', v)} size={28} />
-        <Row style={{ alignItems: 'flex-end' }}>
-          <View style={{ flex: 1 }}>
-            <Field
-              label={t.form.startedAt}
-              value={form.startedAt}
-              onChangeText={(v) => set('startedAt', v)}
-              placeholder={t.form.dateFormat}
-              error={touched ? errors.startedAt : null}
-            />
-          </View>
-          <Button
-            title={t.common.today}
-            variant="secondary"
-            compact
-            onPress={() => set('startedAt', today())}
-          />
-        </Row>
-        <Row style={{ alignItems: 'flex-end' }}>
-          <View style={{ flex: 1 }}>
-            <Field
-              label={t.form.finishedAt}
-              value={form.finishedAt}
-              onChangeText={(v) => set('finishedAt', v)}
-              placeholder={t.form.dateFormat}
-              error={touched ? errors.finishedAt : null}
-            />
-          </View>
-          <Button
-            title={t.common.today}
-            variant="secondary"
-            compact
-            onPress={() => set('finishedAt', today())}
-          />
-        </Row>
+        <DateField
+          label={t.form.startedAt}
+          value={form.startedAt}
+          onChange={(v) => set('startedAt', v)}
+          error={touched ? errors.startedAt : null}
+        />
+        <DateField
+          label={t.form.finishedAt}
+          value={form.finishedAt}
+          onChange={(v) => set('finishedAt', v)}
+          error={touched ? errors.finishedAt : null}
+        />
         <Field
           label={t.form.notes}
           value={form.notes}

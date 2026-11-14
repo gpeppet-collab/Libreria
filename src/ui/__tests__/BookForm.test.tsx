@@ -5,6 +5,10 @@ import { t } from '@/i18n/it';
 import { BookForm, type BookFormResult } from '../BookForm';
 import { createTestServices, renderWithServices, type TestContext } from './testUtils';
 
+jest.mock('../datePicker', () => ({ pickDate: jest.fn() }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockPickDate = (require('../datePicker') as { pickDate: jest.Mock }).pickDate;
+
 const ISBN = '9780140328721';
 let ctx: TestContext;
 
@@ -189,5 +193,42 @@ describe('BookForm', () => {
     const result = onSubmit.mock.calls[0]![0];
     expect(result.book.coverPath).toBeNull();
     expect(result.coverUrls).toEqual(['https://example.org/c.jpg']);
+  });
+
+  it('sceglie le date dal calendario, le mostra all italiana e rifiuta una fine prima dell inizio', async () => {
+    const onSubmit = jest.fn<void, [BookFormResult]>();
+    await renderWithServices(<BookForm onSubmit={onSubmit} />, ctx.services);
+    await fireEvent.changeText(screen.getByLabelText(t.form.title), 'Con date');
+
+    mockPickDate.mockResolvedValueOnce('2026-11-10');
+    await fireEvent.press(screen.getByLabelText(t.form.startedAt));
+    expect(await screen.findByText('10/11/2026')).toBeTruthy();
+    expect(mockPickDate).toHaveBeenLastCalledWith(null);
+
+    mockPickDate.mockResolvedValueOnce('2026-11-01');
+    await fireEvent.press(screen.getByLabelText(t.form.finishedAt));
+    await screen.findByText('01/11/2026');
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(await screen.findByText(t.form.finishedBeforeStarted)).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // Annullare il calendario non cambia il valore.
+    mockPickDate.mockResolvedValueOnce(null);
+    await fireEvent.press(screen.getByLabelText(t.form.finishedAt));
+    expect(mockPickDate).toHaveBeenLastCalledWith('2026-11-01');
+    expect(screen.getByText('01/11/2026')).toBeTruthy();
+
+    mockPickDate.mockResolvedValueOnce('2026-11-12');
+    await fireEvent.press(screen.getByLabelText(t.form.finishedAt));
+    await screen.findByText('12/11/2026');
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[0]![0].book).toMatchObject({
+      startedAt: '2026-11-10',
+      finishedAt: '2026-11-12',
+    });
+
+    await fireEvent.press(screen.getByLabelText(`${t.common.clear} ${t.form.startedAt}`));
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[1]![0].book.startedAt).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
 
+import { formatDateIt, toIsoDate } from '@/domain/dates';
 import { formatIsbn13 } from '@/domain/isbn';
 import {
   AGE_RANGE_LABELS,
@@ -96,8 +97,8 @@ export default function BookDetailScreen() {
         {b.startedAt || b.finishedAt ? (
           <AppText variant="small">
             {[
-              b.startedAt ? `${t.form.startedAt}: ${b.startedAt}` : null,
-              b.finishedAt ? `${t.form.finishedAt}: ${b.finishedAt}` : null,
+              b.startedAt ? `${t.form.startedAt}: ${formatDateIt(b.startedAt)}` : null,
+              b.finishedAt ? `${t.form.finishedAt}: ${formatDateIt(b.finishedAt)}` : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -113,7 +114,9 @@ export default function BookDetailScreen() {
         </Card>
       ) : null}
 
-      <AppText variant="small">{t.detail.addedOn(b.createdAt.slice(0, 10))}</AppText>
+      <AppText variant="small">
+        {t.detail.addedOn(formatDateIt(toIsoDate(new Date(b.createdAt))))}
+      </AppText>
       <Row style={{ marginTop: spacing.sm }}>
         <View style={styles.flex}>
           <Button

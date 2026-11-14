@@ -2,7 +2,7 @@
   "expo": {
     "name": "Libreria",
     "slug": "libreria",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "scheme": "libreria",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,13 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": ["android.permission.CAMERA"],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -26,7 +32,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Libreria usa la fotocamera per leggere il codice a barre ISBN dei libri."
+          "cameraPermission": "Libreria usa la fotocamera per leggere il codice a barre ISBN dei libri.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false
         }
       ],
       [

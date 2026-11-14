@@ -14,3 +14,4 @@ export { InlineEditRow } from './InlineEditRow';
 export { TagInput } from './TagInput';
 export { BookForm, type BookFormResult } from './BookForm';
 export { FilterPanel } from './FilterPanel';
+export { DateField } from './DateField';
