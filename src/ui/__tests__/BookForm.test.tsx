@@ -125,8 +125,13 @@ describe('BookForm', () => {
       tags: ['dinosauri'],
     });
     await renderWithServices(<BookForm onSubmit={jest.fn()} />, ctx.services);
+    // I tag esistenti si vedono subito, senza scrivere nulla.
+    expect(await screen.findByText('dinosauri (1)')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText(t.form.tags), 'din');
     await waitFor(() => expect(screen.getByText('dinosauri (1)')).toBeTruthy());
+    expect(screen.getByText(t.form.addTag('din'))).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText(t.form.tags), 'zzz');
+    await waitFor(() => expect(screen.queryByText('dinosauri (1)')).toBeNull());
   });
 
   it('permette di scegliere una foto come copertina, che prevale su quelle online', async () => {

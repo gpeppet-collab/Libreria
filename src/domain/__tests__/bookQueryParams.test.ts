@@ -21,6 +21,10 @@ describe('bookQueryParams', () => {
     });
     expect(parseBookQueryParams({ status: ['letto', 'x'] })).toEqual({ status: 'letto' });
     expect(parseBookQueryParams({})).toEqual({});
+    expect(parseBookQueryParams({ ageRange: 'none', bookTypeId: 'none' })).toEqual({
+      ageRange: 'none',
+      bookTypeId: 'none',
+    });
   });
 
   it('fa il giro completo query → params → query', () => {

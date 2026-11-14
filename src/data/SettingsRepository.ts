@@ -2,6 +2,7 @@ import type { SqlDatabase } from './SqlDatabase';
 
 /** Chiavi delle impostazioni salvate nel database locale. */
 export const SETTING_GOOGLE_BOOKS_API_KEY = 'google_books_api_key';
+export const SETTING_THEME = 'theme';
 
 /** Impostazioni chiave/valore dell'app. */
 export interface SettingsRepository {

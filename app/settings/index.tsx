@@ -13,12 +13,15 @@ import type { ImportPreview } from '@/services/exportImport/ExportImportService'
 import { Button } from '@/ui/Button';
 import { ErrorBanner, errorMessage } from '@/ui/ErrorBanner';
 import { Field } from '@/ui/Field';
+import { ChipGroup } from '@/ui/Chip';
 import { AppText, Card, ScrollScreen } from '@/ui/Themed';
+import { THEME_PREFERENCES, useThemePreference, type ThemePreference } from '@/ui/theme';
 
 /** Impostazioni (RF8, RF9): export, import, gestione tag e tipi, info. */
 export default function SettingsScreen() {
   const count = useBookCount();
   const { exportLibrary, pickImport, applyImport } = useExportImport();
+  const themePref = useThemePreference();
   const googleKey = useSetting(SETTING_GOOGLE_BOOKS_API_KEY);
   const [keyDraft, setKeyDraft] = useState<string | null>(null);
   const keyValue = keyDraft ?? googleKey.value ?? '';
@@ -103,6 +106,14 @@ export default function SettingsScreen() {
           loading={pickImport.isPending || applyImport.isPending}
         />
         <ErrorBanner error={exportLibrary.error ?? applyImport.error} />
+      </Card>
+      <Card>
+        <AppText variant="heading">{t.settings.theme}</AppText>
+        <ChipGroup
+          options={THEME_PREFERENCES.map((p) => ({ value: p, label: t.settings.themeLabels[p] }))}
+          value={themePref.preference}
+          onChange={(v) => v && themePref.setPreference(v as ThemePreference)}
+        />
       </Card>
       <Card>
         <AppText variant="heading">{t.settings.onlineSearch}</AppText>

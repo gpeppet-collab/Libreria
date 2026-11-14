@@ -142,6 +142,18 @@ describe('SqliteBookRepository.findAll', () => {
     ).toEqual(['Avventure spaziali']);
   });
 
+  it('filtra i libri senza fascia d età o senza tipo', async () => {
+    expect((await repos.books.findAll({ ageRange: 'none' })).map((b) => b.title)).toEqual([
+      'Senza classificazione',
+    ]);
+    expect((await repos.books.findAll({ bookTypeId: 'none' })).map((b) => b.title)).toEqual([
+      'Senza classificazione',
+    ]);
+    expect(await repos.books.findAll({ ageRange: 'none', bookTypeId: 'cartonato' })).toHaveLength(
+      0,
+    );
+  });
+
   it('filtra per tag in AND', async () => {
     expect((await repos.books.findAll({ tags: ['animali'] })).map((b) => b.title)).toEqual([
       'Buonanotte luna',

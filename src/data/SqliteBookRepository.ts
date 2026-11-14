@@ -5,6 +5,7 @@ import {
   AGE_RANGE_LABELS,
   READING_STATUSES,
   READING_STATUS_LABELS,
+  UNSET,
   type AgeRange,
   type Book,
   type BookPatch,
@@ -83,11 +84,15 @@ export class SqliteBookRepository implements BookRepository {
       where.push('b.status = ?');
       params.push(query.status);
     }
-    if (query.ageRange) {
+    if (query.ageRange === UNSET) {
+      where.push('b.age_range IS NULL');
+    } else if (query.ageRange) {
       where.push('b.age_range = ?');
       params.push(query.ageRange);
     }
-    if (query.bookTypeId) {
+    if (query.bookTypeId === UNSET) {
+      where.push('b.book_type_id IS NULL');
+    } else if (query.bookTypeId) {
       where.push('b.book_type_id = ?');
       params.push(query.bookTypeId);
     }

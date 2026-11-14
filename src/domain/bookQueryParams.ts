@@ -2,6 +2,7 @@ import { normalizeTagList } from './tags';
 import {
   AGE_RANGES,
   READING_STATUSES,
+  UNSET,
   type AgeRange,
   type BookQuery,
   type ReadingStatus,
@@ -32,7 +33,9 @@ export function parseBookQueryParams(
   if (status && READING_STATUSES.includes(status as ReadingStatus))
     query.status = status as ReadingStatus;
   const ageRange = one('ageRange');
-  if (ageRange && AGE_RANGES.includes(ageRange as AgeRange)) query.ageRange = ageRange as AgeRange;
+  if (ageRange === UNSET) query.ageRange = UNSET;
+  else if (ageRange && AGE_RANGES.includes(ageRange as AgeRange))
+    query.ageRange = ageRange as AgeRange;
   const bookTypeId = one('bookTypeId');
   if (bookTypeId) query.bookTypeId = bookTypeId;
   const tags = one('tags');

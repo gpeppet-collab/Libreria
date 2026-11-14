@@ -90,12 +90,18 @@ export type NewBook = Omit<Book, 'id' | 'createdAt' | 'updatedAt'>;
 /** Modifica parziale di un libro. */
 export type BookPatch = Partial<NewBook>;
 
+/** Valore di filtro per "non indicata/o": libri senza fascia d'età o senza tipo. */
+export const UNSET = 'none' as const;
+export type Unset = typeof UNSET;
+
 /** Criteri di ricerca, filtro e ordinamento della lista. */
 export interface BookQuery {
   /** Ricerca testuale su titolo, autori e ISBN (case-insensitive). */
   text?: string;
   status?: ReadingStatus;
-  ageRange?: AgeRange;
+  /** Una fascia d'età, oppure `UNSET` per i libri senza fascia. */
+  ageRange?: AgeRange | Unset;
+  /** Un tipo, oppure `UNSET` per i libri senza tipo. */
   bookTypeId?: string;
   /** Filtro AND: il libro deve avere tutti i tag indicati. */
   tags?: string[];

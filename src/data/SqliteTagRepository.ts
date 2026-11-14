@@ -74,7 +74,7 @@ export class SqliteTagRepository implements TagRepository {
     if (res.changes === 0) throw new NotFoundError('Tag', id);
   }
 
-  /** Crea il tag se non esiste e lo restituisce. Usato dai servizi di import. */
+  /** Crea il tag se non esiste e lo restituisce. */
   async ensure(name: string): Promise<Tag> {
     const n = normalizeTagName(name);
     if (!n) throw new ValidationError('Il nome del tag è obbligatorio');

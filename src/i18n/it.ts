@@ -43,6 +43,8 @@ export const t = {
     bookType: 'Tipo',
     tags: 'Tag',
     clearAll: 'Togli tutti i filtri',
+    ageRangeUnset: 'Non indicata',
+    bookTypeUnset: 'Non indicato',
   },
   groups: {
     title: 'Per gruppo',
@@ -92,8 +94,12 @@ export const t = {
     ageRange: "Fascia d'età",
     bookType: 'Tipo di libro',
     tags: 'Tag',
-    tagsPlaceholder: 'Aggiungi tag…',
+    tagsPlaceholder: 'Nuovo tag o cerca…',
     suggestedTags: 'Tag suggeriti',
+    yourTags: 'I tuoi tag',
+    showAllTags: (n: number) => `Mostra tutti (${n})`,
+    showFewerTags: 'Mostra meno',
+    addTag: (name: string) => `Aggiungi "${name}"`,
     reading: 'Lettura',
     status: 'Stato',
     rating: 'Valutazione',
@@ -140,6 +146,8 @@ export const t = {
     importDone: (r: { inserted: number; replaced: number; skipped: number }) =>
       `Inseriti ${r.inserted}, sostituiti ${r.replaced}, saltati ${r.skipped}.`,
     importInvalid: 'Il file non è un export valido di Libreria.',
+    theme: 'Tema',
+    themeLabels: { system: 'Come il telefono', light: 'Chiaro', dark: 'Scuro' } as const,
     onlineSearch: 'Ricerca online',
     googleKey: 'Chiave API Google Books (facoltativa)',
     googleKeyHint:
@@ -154,7 +162,8 @@ export const t = {
   },
   tags: {
     title: 'Tag',
-    empty: 'Nessun tag. I tag si creano dal form del libro.',
+    empty: 'Nessun tag. Aggiungine uno qui sopra o dal form del libro.',
+    newPlaceholder: 'Nuovo tag…',
     deleteTitle: 'Eliminare il tag?',
     deleteMessage: (name: string, n: number) => `"${name}" verrà tolto da ${n} libri.`,
     count: (n: number) => (n === 1 ? '1 libro' : `${n} libri`),

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { UNSET } from '@/domain/types';
 import { useGroupCounts } from '@/hooks/useBooks';
 import { t } from '@/i18n/it';
 import { ChipGroup } from '@/ui/Chip';
@@ -21,7 +22,7 @@ export default function GroupsScreen() {
 
   const open = (key: string | null) => {
     const param = field === 'ageRange' ? 'ageRange' : 'bookTypeId';
-    router.navigate(key ? { pathname: '/', params: { [param]: key } } : '/');
+    router.navigate({ pathname: '/', params: { [param]: key ?? UNSET } });
   };
 
   return (
@@ -40,7 +41,6 @@ export default function GroupsScreen() {
         <Pressable
           key={g.key ?? '__null'}
           accessibilityRole="button"
-          disabled={g.key === null}
           onPress={() => open(g.key)}
           style={({ pressed }) => [
             styles.row,

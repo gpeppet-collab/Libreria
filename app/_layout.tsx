@@ -1,29 +1,60 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { SETTING_THEME } from '@/data/SettingsRepository';
 import { ServicesProvider } from '@/hooks/ServicesContext';
 import { t } from '@/i18n/it';
 import { getAppServices, type AppServices } from '@/services/appServices';
-import { useTheme } from '@/ui/theme';
+import {
+  parseThemePreference,
+  ThemePreferenceContext,
+  useTheme,
+  type ThemePreference,
+} from '@/ui/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 5_000 } },
 });
 
 export default function RootLayout() {
-  const theme = useTheme();
   const [services, setServices] = useState<AppServices | null>(null);
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getAppServices()
-      .then(setServices)
+      .then(async (s) => {
+        const saved = await s.repos.settings.get(SETTING_THEME).catch(() => null);
+        setPreferenceState(parseThemePreference(saved));
+        setServices(s);
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
+
+  const themeContext = useMemo(
+    () => ({
+      preference,
+      setPreference: (next: ThemePreference) => {
+        setPreferenceState(next);
+        void services?.repos.settings.set(SETTING_THEME, next === 'system' ? null : next);
+      },
+    }),
+    [preference, services],
+  );
+
+  return (
+    <ThemePreferenceContext.Provider value={themeContext}>
+      <AppShell services={services} error={error} />
+    </ThemePreferenceContext.Provider>
+  );
+}
+
+function AppShell({ services, error }: { services: AppServices | null; error: string | null }) {
+  const theme = useTheme();
 
   if (!services) {
     return (

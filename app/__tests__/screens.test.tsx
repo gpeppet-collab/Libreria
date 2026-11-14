@@ -7,6 +7,7 @@ import { createTestServices, renderWithServices, type TestContext } from '@/ui/_
 import BookDetailScreen from '../book/[id]/index';
 import GroupsScreen from '../groups';
 import BookListScreen from '../index';
+import TagsSettingsScreen from '../settings/tags';
 
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
@@ -121,6 +122,34 @@ describe('Vista per gruppo', () => {
     await fireEvent.press(screen.getByText(t.groups.byBookType));
     expect(await screen.findByText('Libro cartonato')).toBeTruthy();
     expect(screen.getAllByText(t.list.count(1))).toHaveLength(3);
+  });
+});
+
+describe('Gruppo "non indicata"', () => {
+  it('apre la lista dei libri senza fascia d età', async () => {
+    await ctx.services.repos.books.create(book({ title: 'Senza fascia' }));
+    await renderWithServices(<GroupsScreen />, ctx.services);
+    await fireEvent.press(await screen.findByText('Non indicata'));
+    expect(mockRouter.navigate).toHaveBeenCalledWith({
+      pathname: '/',
+      params: { ageRange: 'none' },
+    });
+
+    mockParams = { ageRange: 'none' };
+    await renderWithServices(<BookListScreen />, ctx.services);
+    expect(await screen.findByText('Senza fascia')).toBeTruthy();
+    expect(screen.queryByText('Matilde')).toBeNull();
+  });
+});
+
+describe('Gestione tag', () => {
+  it('aggiunge un tag nuovo, che compare tra quelli proponibili', async () => {
+    await renderWithServices(<TagsSettingsScreen />, ctx.services);
+    await screen.findByText('bosco');
+    await fireEvent.changeText(screen.getByPlaceholderText(t.tags.newPlaceholder), '  Natale ');
+    await fireEvent.press(screen.getAllByText(t.common.add).at(-1)!);
+    expect(await screen.findByText('natale')).toBeTruthy();
+    expect((await ctx.services.repos.tags.findAll()).map((x) => x.name)).toContain('natale');
   });
 });
 

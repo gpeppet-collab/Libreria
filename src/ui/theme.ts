@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { useColorScheme } from 'react-native';
 
 export interface Theme {
@@ -69,8 +70,28 @@ export const darkTheme: Theme = {
   },
 };
 
+/** Preferenza dell'utente: seguire il telefono oppure forzare chiaro o scuro. */
+export type ThemePreference = 'system' | 'light' | 'dark';
+export const THEME_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
+
+export function parseThemePreference(value: string | null | undefined): ThemePreference {
+  return value === 'light' || value === 'dark' ? value : 'system';
+}
+
+export const ThemePreferenceContext = createContext<{
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
+}>({ preference: 'system', setPreference: () => {} });
+
+export function useThemePreference() {
+  return useContext(ThemePreferenceContext);
+}
+
 export function useTheme(): Theme {
-  return useColorScheme() === 'dark' ? darkTheme : lightTheme;
+  const system = useColorScheme();
+  const { preference } = useContext(ThemePreferenceContext);
+  const dark = preference === 'system' ? system === 'dark' : preference === 'dark';
+  return dark ? darkTheme : lightTheme;
 }
 
 /** Colore di sfondo per una fascia d'età (chip), uguale in chiaro e scuro. */

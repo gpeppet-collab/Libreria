@@ -28,6 +28,13 @@ export function useTagMutations() {
       qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
       qc.invalidateQueries({ queryKey: queryKeys.books.all }),
     ]);
+  const create = useMutation({
+    mutationFn: async (name: string) => {
+      const tag = await repos.tags.ensure(name);
+      await invalidate();
+      return tag;
+    },
+  });
   const rename = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const tag = await repos.tags.rename(id, name);
@@ -41,5 +48,5 @@ export function useTagMutations() {
       await invalidate();
     },
   });
-  return { rename, remove };
+  return { create, rename, remove };
 }

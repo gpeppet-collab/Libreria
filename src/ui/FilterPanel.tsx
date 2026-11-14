@@ -6,9 +6,11 @@ import {
   AGE_RANGE_LABELS,
   READING_STATUSES,
   READING_STATUS_LABELS,
+  UNSET,
   type AgeRange,
   type BookQuery,
   type ReadingStatus,
+  type Unset,
 } from '@/domain/types';
 import { useBookTypes } from '@/hooks/useBookTypes';
 import { useTags } from '@/hooks/useTags';
@@ -41,17 +43,23 @@ export function FilterPanel({ query, onChange }: FilterPanelProps) {
       />
       <AppText variant="label">{t.filters.ageRange}</AppText>
       <ChipGroup
-        options={AGE_RANGES.map((a) => ({
-          value: a,
-          label: AGE_RANGE_LABELS[a],
-          color: AGE_RANGE_COLORS[a],
-        }))}
+        options={[
+          ...AGE_RANGES.map((a) => ({
+            value: a as AgeRange | Unset,
+            label: AGE_RANGE_LABELS[a],
+            color: AGE_RANGE_COLORS[a],
+          })),
+          { value: UNSET, label: t.filters.ageRangeUnset },
+        ]}
         value={query.ageRange ?? null}
-        onChange={(v) => patch({ ageRange: (v as AgeRange | null) ?? undefined })}
+        onChange={(v) => patch({ ageRange: (v as AgeRange | Unset | null) ?? undefined })}
       />
       <AppText variant="label">{t.filters.bookType}</AppText>
       <ChipGroup
-        options={(bookTypes.data ?? []).map((b) => ({ value: b.id, label: b.name }))}
+        options={[
+          ...(bookTypes.data ?? []).map((b) => ({ value: b.id, label: b.name })),
+          { value: UNSET, label: t.filters.bookTypeUnset },
+        ]}
         value={query.bookTypeId ?? null}
         onChange={(v) => patch({ bookTypeId: (v as string | null) ?? undefined })}
       />
