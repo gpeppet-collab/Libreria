@@ -30,10 +30,9 @@ describe('CoverService', () => {
   it('prova i candidati in ordine; se nessuno si scarica ripiega sul primo URL remoto', async () => {
     files.downloads.set('https://x/a.jpg', new Error('404'));
     files.downloads.set('https://x/b.jpg', 'JPEG-B');
-    expect(await covers.downloadFirst(['https://x/a.jpg', 'https://x/b.jpg'], 'book-9')).toBe(
-      covers.pathFor('book-9'),
-    );
-    expect(files.files.get(covers.pathFor('book-9'))).toBe('JPEG-B');
+    const got = await covers.downloadFirst(['https://x/a.jpg', 'https://x/b.jpg'], 'book-9');
+    expect(got).toMatch(/covers\/book-9-\d+\.jpg$/);
+    expect(files.files.get(got!)).toBe('JPEG-B');
 
     files.downloads.set('https://x/b.jpg', new Error('404'));
     expect(await covers.downloadFirst(['https://x/a.jpg', 'https://x/b.jpg'], 'book-10')).toBe(
