@@ -75,6 +75,12 @@ export class WebFilePort implements FilePort {
     setTimeout(() => URL.revokeObjectURL(href), 1000);
   }
 
+  /** Sul web "salvare in una cartella" equivale a scaricare il file. */
+  async saveToUserFolder(uri: string, _fileName: string, mimeType: string): Promise<boolean> {
+    await this.share(uri, mimeType);
+    return true;
+  }
+
   pickFile(mimeTypes: string[]): Promise<PickedFile | null> {
     return new Promise((resolve, reject) => {
       const input = document.createElement('input');

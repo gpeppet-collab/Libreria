@@ -5,3 +5,4 @@ export * from './bookTypes';
 export * from './export';
 export * from './bookQueryParams';
 export * from './dates';
+export * from './classify';

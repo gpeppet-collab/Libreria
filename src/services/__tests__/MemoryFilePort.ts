@@ -46,6 +46,14 @@ export class MemoryFilePort implements FilePort {
     if (!this.files.has(uri)) throw new Error(`condivisione di un file inesistente: ${uri}`);
     this.shared.push({ uri, mimeType });
   }
+  /** File salvati con `saveToUserFolder`; `userFolderAvailable = false` simula l'annullamento. */
+  readonly savedToFolder: { fileName: string; content: string; mimeType: string }[] = [];
+  userFolderAvailable = true;
+  async saveToUserFolder(uri: string, fileName: string, mimeType: string): Promise<boolean> {
+    if (!this.userFolderAvailable) return false;
+    this.savedToFolder.push({ fileName, content: await this.readText(uri), mimeType });
+    return true;
+  }
   async pickFile(): Promise<PickedFile | null> {
     return this.nextPick;
   }

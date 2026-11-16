@@ -104,9 +104,11 @@ export function parseSbnPublication(raw: string | undefined): {
   year?: number;
 } {
   if (!raw) return {};
-  const afterPlace = raw.includes(' : ') ? raw.slice(raw.indexOf(' : ') + 3) : raw;
+  // L'editore è dopo l'ultimo " : " (prima può esserci altro, es. note di traduzione e luogo).
+  const afterPlace = raw.includes(' : ') ? raw.slice(raw.lastIndexOf(' : ') + 3) : raw;
   const publisher = afterPlace
-    .replace(/[,.]?\s*\[?(c|stampa\s+)?\d{4}\]?.*$/i, '')
+    .replace(/[,.;]?\s*\[?(?:c|©|stampa\s+)?\s*\d{4}\]?.*$/i, '')
+    .replace(/[\s,;.©]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   return { publisher: publisher || undefined, year: extractYear(raw) };

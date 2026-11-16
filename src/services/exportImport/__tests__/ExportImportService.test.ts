@@ -52,6 +52,7 @@ describe('ExportImportService.exportLibrary', () => {
       fileName: 'libreria-2026-05-06.json',
       books: 2,
       covers: 1,
+      delivered: true,
     });
     expect(files.shared).toEqual([{ uri: summary.uri, mimeType: 'application/json' }]);
 
@@ -69,10 +70,34 @@ describe('ExportImportService.exportLibrary', () => {
 
   it('può escludere le copertine e la condivisione', async () => {
     await seed();
-    const summary = await service.exportLibrary({ includeCovers: false, share: false });
+    const summary = await service.exportLibrary({ includeCovers: false, destination: 'none' });
     expect(summary.covers).toBe(0);
     expect(files.shared).toEqual([]);
     expect(JSON.parse(files.files.get(summary.uri)!).books[0].coverBase64).toBeUndefined();
+  });
+});
+
+describe('ExportImportService: salvataggio in una cartella', () => {
+  it('salva il file nella cartella scelta, senza aprire la condivisione', async () => {
+    await seed();
+    const summary = await service.exportLibrary({
+      destination: 'folder',
+      now: new Date('2026-05-06T08:00:00Z'),
+    });
+    expect(summary.delivered).toBe(true);
+    expect(files.shared).toEqual([]);
+    expect(files.savedToFolder).toHaveLength(1);
+    expect(files.savedToFolder[0]).toMatchObject({
+      fileName: 'libreria-2026-05-06.json',
+      mimeType: 'application/json',
+    });
+    expect(JSON.parse(files.savedToFolder[0]!.content).books).toHaveLength(2);
+  });
+
+  it('se l utente annulla la scelta lo segnala', async () => {
+    files.userFolderAvailable = false;
+    expect((await service.exportLibrary({ destination: 'folder' })).delivered).toBe(false);
+    expect(files.savedToFolder).toEqual([]);
   });
 });
 

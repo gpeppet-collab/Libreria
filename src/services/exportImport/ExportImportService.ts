@@ -17,8 +17,11 @@ import { joinUri, type FilePort } from '../files/FilePort';
 export interface ExportOptions {
   /** Include le copertine in base64 (file più grande). Default: true. */
   includeCovers?: boolean;
-  /** Apre la share sheet dopo la scrittura. Default: true. */
-  share?: boolean;
+  /**
+   * Cosa fare del file: `share` apre la condivisione (default), `folder` fa scegliere una
+   * cartella del telefono, `none` lo lascia solo nella cache.
+   */
+  destination?: 'share' | 'folder' | 'none';
   now?: Date;
 }
 
@@ -27,6 +30,8 @@ export interface ExportSummary {
   fileName: string;
   books: number;
   covers: number;
+  /** false se l'utente ha annullato la scelta della cartella. */
+  delivered: boolean;
 }
 
 /** Anteprima di un file scelto per l'import, prima di applicarlo. */
@@ -72,9 +77,14 @@ export class ExportImportService {
     const fileName = exportFileName(now);
     const uri = joinUri(this.files.cacheDirectory, fileName);
     await this.files.writeText(uri, JSON.stringify(doc, null, 2));
-    if (options.share !== false) await this.files.share(uri, EXPORT_MIME_TYPE);
+    const destination = options.destination ?? 'share';
+    let delivered = true;
+    if (destination === 'share') await this.files.share(uri, EXPORT_MIME_TYPE);
+    else if (destination === 'folder') {
+      delivered = await this.files.saveToUserFolder(uri, fileName, EXPORT_MIME_TYPE);
+    }
 
-    return { uri, fileName, books: books.length, covers: Object.keys(covers).length };
+    return { uri, fileName, books: books.length, covers: Object.keys(covers).length, delivered };
   }
 
   /** Apre il selettore e legge il file. `null` se l'utente annulla. Lancia `ExportFormatError` se non valido. */

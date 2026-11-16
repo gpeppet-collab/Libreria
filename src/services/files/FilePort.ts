@@ -28,6 +28,11 @@ export interface FilePort {
   download(url: string, destinationUri: string): Promise<void>;
   /** Apre la share sheet di sistema. */
   share(uri: string, mimeType: string): Promise<void>;
+  /**
+   * Fa scegliere una cartella del telefono (es. Download) e vi salva una copia del file.
+   * Restituisce false se l'utente annulla.
+   */
+  saveToUserFolder(uri: string, fileName: string, mimeType: string): Promise<boolean>;
   /** Apre il selettore di file. `null` se l'utente annulla. */
   pickFile(mimeTypes: string[]): Promise<PickedFile | null>;
   /** Scatta una foto o sceglie un'immagine dalla galleria. `null` se l'utente annulla o nega il permesso. */

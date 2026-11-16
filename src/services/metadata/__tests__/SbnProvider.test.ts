@@ -46,6 +46,20 @@ describe('SbnProvider', () => {
       publisher: 'Mondadori',
       year: 2019,
     });
+    // Casi reali che lasciavano residui nell'editore.
+    expect(parseSbnPublication('Milano : Babalibri, ©2012')).toEqual({
+      publisher: 'Babalibri',
+      year: 2012,
+    });
+    expect(parseSbnPublication('Roma : Sassi, © 2021')).toEqual({ publisher: 'Sassi', year: 2021 });
+    expect(parseSbnPublication('traduzione di Federica Rocca : Milano : Babalibri, 2012')).toEqual({
+      publisher: 'Babalibri',
+      year: 2012,
+    });
+    expect(parseSbnPublication('[Milano] : Gribaudo, [2019]')).toEqual({
+      publisher: 'Gribaudo',
+      year: 2019,
+    });
     expect(parseSbnPublication(undefined)).toEqual({});
   });
 });

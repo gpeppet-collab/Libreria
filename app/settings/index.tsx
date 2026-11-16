@@ -37,10 +37,19 @@ export default function SettingsScreen() {
     });
   const version = Constants.expoConfig?.version ?? '0.0.0';
 
-  const doExport = (includeCovers: boolean) =>
-    exportLibrary.mutate(includeCovers, {
-      onSuccess: (s) => Alert.alert(t.settings.export, t.settings.exportDone(s.books, s.covers)),
-    });
+  const [includeCovers, setIncludeCovers] = useState(true);
+  const doExport = (destination: 'share' | 'folder') =>
+    exportLibrary.mutate(
+      { includeCovers, destination },
+      {
+        onSuccess: (s) => {
+          // Dopo la condivisione non serve un avviso: l'ha già gestita Android.
+          if (destination === 'folder' && s.delivered) {
+            Alert.alert(t.settings.export, t.settings.exportSaved(s.fileName, s.books, s.covers));
+          }
+        },
+      },
+    );
 
   const applyWith = (preview: ImportPreview, strategy: 'keep' | 'replace') =>
     applyImport.mutate(
@@ -88,17 +97,28 @@ export default function SettingsScreen() {
         <AppText variant="muted">
           {count.data !== undefined ? t.list.count(count.data) : ''}
         </AppText>
+        <AppText variant="label">{t.settings.export}</AppText>
+        <ChipGroup
+          options={[
+            { value: 'yes', label: t.settings.exportWithCovers },
+            { value: 'no', label: t.settings.exportWithoutCovers },
+          ]}
+          value={includeCovers ? 'yes' : 'no'}
+          onChange={(v) => v && setIncludeCovers(v === 'yes')}
+        />
         <Button
-          title={t.settings.exportWithCovers}
-          onPress={() => doExport(true)}
+          title={t.settings.exportToFolder}
+          onPress={() => doExport('folder')}
           loading={exportLibrary.isPending}
         />
         <Button
-          title={t.settings.exportWithoutCovers}
+          title={t.settings.exportShare}
           variant="secondary"
-          onPress={() => doExport(false)}
+          onPress={() => doExport('share')}
           loading={exportLibrary.isPending}
         />
+        <AppText variant="small">{t.settings.exportHint}</AppText>
+        <AppText variant="label">{t.settings.importLabel}</AppText>
         <Button
           title={t.settings.import}
           variant="secondary"

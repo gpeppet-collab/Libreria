@@ -294,4 +294,43 @@ describe('BookForm', () => {
       await screen.findByText(/Nessun risultato online[\s\S]*Google Books: non trovato/),
     ).toBeTruthy();
   });
+
+  it('dopo la ricerca suggerisce fascia d età, tipo e tag in italiano, senza applicarli da solo', async () => {
+    ctx.metadata.set(ISBN, {
+      isbn: ISBN,
+      title: 'Dinosauri. Un libro pop-up. Ediz. a colori',
+      authors: [],
+      publisher: 'Ape Junior',
+      description: 'Età di lettura: da 4 anni.',
+      source: 'sbn',
+      suggestedTags: ['juvenile fiction', 'dinosaurs'],
+    });
+    const onSubmit = jest.fn<void, [BookFormResult]>();
+    await renderWithServices(<BookForm initialIsbn={ISBN} onSubmit={onSubmit} />, ctx.services);
+
+    expect(await screen.findByText(t.form.suggestedAge('3-5 anni'))).toBeTruthy();
+    expect(screen.getByText(t.form.suggestedType('Libro gioco / attività'))).toBeTruthy();
+    expect(screen.getByText('+ dinosauri')).toBeTruthy();
+    expect(screen.getByText('+ dinosaurs')).toBeTruthy();
+    expect(screen.queryByText('+ juvenile fiction')).toBeNull();
+
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[0]![0].book).toMatchObject({
+      ageRange: null,
+      bookTypeId: null,
+      tags: [],
+    });
+
+    await fireEvent.press(screen.getByText(t.form.applyAllSuggestions));
+    await fireEvent.press(screen.getByText('+ dinosauri'));
+    // Una volta applicati, i suggerimenti spariscono.
+    expect(screen.queryByText(t.form.suggestions)).toBeNull();
+    await fireEvent.press(screen.getByText(t.common.save));
+    expect(onSubmit.mock.calls[1]![0].book).toMatchObject({
+      ageRange: '3-5',
+      bookTypeId: 'gioco_attivita',
+      tags: ['dinosauri'],
+      description: 'Età di lettura: da 4 anni.',
+    });
+  });
 });

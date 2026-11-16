@@ -1,3 +1,4 @@
+import { shortenDescription } from '@/domain/classify';
 import { normalizeIsbn } from '@/domain/isbn';
 
 import {
@@ -18,8 +19,9 @@ import {
 } from './parsing';
 
 type VolumeInfo = Record<string, unknown>;
+const SNIPPET = '_textSnippet';
 interface GoogleVolumesResponse {
-  items?: { volumeInfo?: VolumeInfo }[];
+  items?: { volumeInfo?: VolumeInfo; searchInfo?: { textSnippet?: unknown } }[];
 }
 
 export interface GoogleBooksOptions {
@@ -80,7 +82,8 @@ export class GoogleBooksProvider implements MetadataProvider {
       publisher: asString(info.publisher),
       publishedYear: extractYear(info.publishedDate),
       pageCount: asPositiveInt(info.pageCount),
-      description: asString(info.description),
+      description:
+        shortenDescription(asString(info.description) ?? asString(info[SNIPPET])) ?? undefined,
       coverUrl: cleanCoverUrl(images.thumbnail ?? images.smallThumbnail),
       source: this.source,
       suggestedTags: categoriesToTags(asStringArray(info.categories)),
@@ -99,7 +102,10 @@ export class GoogleBooksProvider implements MetadataProvider {
     if (res.status === 429 || res.status === 403) throw new QuotaExceededError(this.source);
     if (!res.ok) throw new Error(`Google Books HTTP ${res.status}`);
     const body = (await res.json()) as GoogleVolumesResponse;
-    return (body.items ?? []).flatMap((i) => (i.volumeInfo ? [i.volumeInfo] : []));
+    // Il breve estratto della ricerca fa da descrizione quando quella completa manca.
+    return (body.items ?? []).flatMap((i) =>
+      i.volumeInfo ? [{ ...i.volumeInfo, [SNIPPET]: i.searchInfo?.textSnippet }] : [],
+    );
   }
 }
 

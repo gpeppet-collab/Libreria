@@ -68,6 +68,19 @@ export class ExpoFilePort implements FilePort {
     await Sharing.shareAsync(uri, { mimeType });
   }
 
+  async saveToUserFolder(uri: string, fileName: string, mimeType: string): Promise<boolean> {
+    let folder: Directory;
+    try {
+      // Selettore di cartelle di Android: non richiede permessi di archiviazione.
+      folder = await Directory.pickDirectoryAsync();
+    } catch {
+      return false; // annullato
+    }
+    const target = folder.createFile(fileName, mimeType);
+    await target.write(await new File(uri).text());
+    return true;
+  }
+
   async pickFile(mimeTypes: string[]): Promise<PickedFile | null> {
     const res = await DocumentPicker.getDocumentAsync({
       type: mimeTypes,

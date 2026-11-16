@@ -98,4 +98,33 @@ describe('GoogleBooksProvider', () => {
     });
     await expect(p.lookupByIsbn(ISBN)).rejects.toThrow('HTTP 500');
   });
+
+  it('usa l estratto della ricerca come descrizione breve quando manca quella completa', async () => {
+    const withSnippet = fakeFetch({
+      'googleapis.com': async () =>
+        jsonResponse({
+          items: [
+            {
+              volumeInfo: { title: 'T' },
+              searchInfo: { textSnippet: 'Un <b>topolino</b> coraggioso&nbsp;incontra un mostro.' },
+            },
+          ],
+        }),
+    });
+    expect(
+      (await new GoogleBooksProvider({ fetchFn: withSnippet }).lookupByIsbn(ISBN))?.description,
+    ).toBe('Un topolino coraggioso incontra un mostro.');
+
+    const long =
+      'Prima frase della trama. ' + 'Altra frase piuttosto lunga che allunga il testo. '.repeat(20);
+    const withLong = fakeFetch({
+      'googleapis.com': async () =>
+        jsonResponse({ items: [{ volumeInfo: { title: 'T', description: long } }] }),
+    });
+    const d = (await new GoogleBooksProvider({ fetchFn: withLong }).lookupByIsbn(ISBN))!
+      .description!;
+    expect(d.length).toBeLessThanOrEqual(400);
+    expect(d.startsWith('Prima frase della trama.')).toBe(true);
+    expect(d.endsWith('.')).toBe(true);
+  });
 });

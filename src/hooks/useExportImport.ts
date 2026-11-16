@@ -10,7 +10,8 @@ export function useExportImport() {
   const qc = useQueryClient();
 
   const exportLibrary = useMutation({
-    mutationFn: (includeCovers: boolean) => exportImport.exportLibrary({ includeCovers }),
+    mutationFn: (options: { includeCovers: boolean; destination: 'share' | 'folder' }) =>
+      exportImport.exportLibrary(options),
   });
   const pickImport = useMutation({ mutationFn: () => exportImport.pickImportFile() });
   const applyImport = useMutation({

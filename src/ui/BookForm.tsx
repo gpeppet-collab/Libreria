@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
+import { suggestClassification, type ClassificationSuggestion } from '@/domain/classify';
 import { isIsoDate } from '@/domain/dates';
 import { formatIsbn13, normalizeIsbn } from '@/domain/isbn';
+import { normalizeTagList } from '@/domain/tags';
 import {
   AGE_RANGES,
   AGE_RANGE_LABELS,
@@ -17,12 +19,17 @@ import {
 import { useBookTypes } from '@/hooks/useBookTypes';
 import { useServices } from '@/hooks/ServicesContext';
 import { useMetadataLookup, useMetadataSearch } from '@/hooks/useMetadataLookup';
+import { useTags } from '@/hooks/useTags';
 import { t } from '@/i18n/it';
-import type { BookSearchResult, LookupResult } from '@/services/metadata/MetadataProvider';
+import type {
+  BookMetadata,
+  BookSearchResult,
+  LookupResult,
+} from '@/services/metadata/MetadataProvider';
 import { metadataToBookFields } from '@/services/metadata/toBook';
 
 import { Button } from './Button';
-import { ChipGroup } from './Chip';
+import { Chip, ChipGroup } from './Chip';
 import { CoverImage } from './CoverImage';
 import { DateField } from './DateField';
 import { ErrorBanner } from './ErrorBanner';
@@ -88,6 +95,21 @@ function fromBook(book: Book | null | undefined, isbn?: string): FormState {
   };
 }
 
+/** Categorie troppo generiche per essere utili come tag. */
+const GENERIC_CATEGORIES = new Set([
+  'fiction',
+  'general',
+  'juvenile fiction',
+  'juvenile nonfiction',
+  'nonfiction',
+  'children',
+  "children's stories",
+  'children’s picture books',
+  "children's picture books",
+  'picture books',
+  'italian language materials',
+]);
+
 /** Messaggio sull'esito della ricerca online, con il dettaglio per fonte. */
 function describeLookup(result: LookupResult): string {
   if (result.offline) return t.form.lookupOffline;
@@ -117,6 +139,26 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
   const { covers } = useServices();
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const bookTypes = useBookTypes();
+  const allTags = useTags();
+  const [suggestion, setSuggestion] = useState<ClassificationSuggestion | null>(null);
+
+  /** Calcola i suggerimenti di classificazione e di tag dai dati trovati online. */
+  const suggestFrom = (meta: BookMetadata | BookSearchResult) => {
+    const s = suggestClassification(
+      {
+        title: meta.title,
+        description: meta.description,
+        categories: meta.suggestedTags,
+        publisher: meta.publisher,
+        pageCount: meta.pageCount,
+      },
+      (allTags.data ?? []).map((x) => x.name),
+    );
+    setSuggestion(s);
+    const raw = (meta.suggestedTags ?? []).filter((x) => !GENERIC_CATEGORIES.has(x));
+    setSuggestedTags(normalizeTagList([...s.tags, ...raw]).slice(0, 10));
+  };
+
   const lookup = useMetadataLookup();
   const search = useMetadataSearch();
   const { metadata } = useServices();
@@ -146,7 +188,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
         // Le copertine candidate si tengono sempre: si usano solo se manca una copertina valida.
         setCoverUrls(result.coverUrls);
         setOnlineCoverMissing(!meta.coverUrl);
-        setSuggestedTags(meta.suggestedTags ?? []);
+        suggestFrom(meta);
       },
     });
   };
@@ -172,7 +214,7 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
     }));
     setCoverUrls(metadata.coverUrlsFor(r));
     setOnlineCoverMissing(!r.coverUrl);
-    setSuggestedTags(r.suggestedTags ?? []);
+    suggestFrom(r);
     setShowResults(false);
     setAppliedFrom(t.sources[r.source]);
   };
@@ -253,6 +295,14 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
       coverFileUri: coverFileUri ?? undefined,
     });
   };
+
+  // Si propone solo ciò che è diverso da quanto già scelto.
+  const suggestedAge =
+    suggestion?.ageRange && suggestion.ageRange !== form.ageRange ? suggestion.ageRange : null;
+  const suggestedType =
+    suggestion?.bookTypeId && suggestion.bookTypeId !== form.bookTypeId
+      ? ((bookTypes.data ?? []).find((b) => b.id === suggestion.bookTypeId) ?? null)
+      : null;
 
   const pickCover = async (source: 'camera' | 'library') => {
     const uri = await covers.pickImage(source);
@@ -406,6 +456,35 @@ export function BookForm({ initial, initialIsbn, submitting, error, onSubmit }: 
 
       <Card>
         <AppText variant="heading">{t.form.classification}</AppText>
+        {suggestedAge || suggestedType ? (
+          <View style={{ gap: spacing.xs }}>
+            <AppText variant="small">{t.form.suggestions}</AppText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {suggestedAge ? (
+                <Chip
+                  label={t.form.suggestedAge(AGE_RANGE_LABELS[suggestedAge])}
+                  color={AGE_RANGE_COLORS[suggestedAge]}
+                  onPress={() => set('ageRange', suggestedAge)}
+                />
+              ) : null}
+              {suggestedType ? (
+                <Chip
+                  label={t.form.suggestedType(suggestedType.name)}
+                  onPress={() => set('bookTypeId', suggestedType.id)}
+                />
+              ) : null}
+              {suggestedAge && suggestedType ? (
+                <Chip
+                  label={t.form.applyAllSuggestions}
+                  selected
+                  onPress={() =>
+                    setForm((f) => ({ ...f, ageRange: suggestedAge, bookTypeId: suggestedType.id }))
+                  }
+                />
+              ) : null}
+            </View>
+          </View>
+        ) : null}
         <AppText variant="label">{t.form.ageRange}</AppText>
         <ChipGroup
           options={AGE_RANGES.map((a) => ({
