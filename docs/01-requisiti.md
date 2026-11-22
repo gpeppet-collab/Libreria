@@ -1,7 +1,7 @@
 # 01 · Requisiti
 
 **Progetto:** Libreria, catalogo personale di libri su Android
-**Versione documento:** 1.1 (2026-11-14)
+**Versione documento:** 1.2 (2026-11-22)
 **Stato:** approvato per la v1
 
 ## 1. Scopo e contesto
@@ -53,20 +53,23 @@ Scaffali/collezioni, backup cloud, iOS, multiutente, sincronizzazione tra dispos
 | RF21 | **Gestione tag completa**: aggiungere un tag dalle impostazioni; nel form i tag esistenti sono visibili e selezionabili senza scrivere.                                                                                                                                                                              | Must     |
 | RF22 | **Tema**: scegliere tra chiaro, scuro o come il telefono; la scelta resta salvata.                                                                                                                                                                                                                                   | Should   |
 | RF23 | **Date dal calendario**: le date di lettura si scelgono dal calendario di sistema, non si scrivono; non sono ammesse date future né una fine precedente all'inizio.                                                                                                                                                  | Should   |
+| RF24 | **Suggerimenti di classificazione**: dopo una ricerca online il form propone fascia d'età, tipo e tag in italiano, ricavati da titolo, descrizione, categorie, editore e pagine. Si applicano con un tocco, mai in automatico.                                                                                       | Should   |
+| RF25 | **Export in una cartella**: oltre alla condivisione, l'export si salva in una cartella scelta dall'utente (per esempio Download), con o senza copertine.                                                                                                                                                             | Must     |
+| RF26 | **Descrizione breve**: la descrizione trovata online si riduce alle prime frasi; se manca quella completa si usa l'estratto della ricerca.                                                                                                                                                                           | Could    |
 
 ## 4. Requisiti non funzionali
 
-| ID   | Requisito                                                                                                                                                                                            |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RNF1 | Funziona completamente offline; la rete serve solo per RF3 ed è sempre facoltativa.                                                                                                                  |
-| RNF2 | Nessuna autenticazione, nessun dato inviato a server propri; verso Google Books, OPAC SBN e Open Library viaggiano solo l'ISBN o il testo cercato (più la chiave Google, se configurata).            |
-| RNF3 | Android 8+ (API 26+); build con EAS Build o `expo run:android`; distribuzione via APK.                                                                                                               |
-| RNF4 | Lista fluida fino ad almeno 5.000 libri (lista virtualizzata, query SQL indicizzate).                                                                                                                |
-| RNF5 | Migrazioni di schema versionate: aggiornare l'app non perde dati.                                                                                                                                    |
-| RNF6 | Lingua interfaccia: italiano; stringhe centralizzate, pronte per i18n.                                                                                                                               |
-| RNF7 | Copertine salvate in locale nel file system dell'app, non solo come URL remoto.                                                                                                                      |
-| RNF8 | TypeScript strict, lint, test unitari su dominio e repository.                                                                                                                                       |
-| RNF9 | Permessi Android: `CAMERA` (scanner e foto della copertina), chiesto al primo uso, più `INTERNET` e `VIBRATE`, che Android concede senza chiedere. Microfono e archivio sono esclusi esplicitamente. |
+| ID   | Requisito                                                                                                                                                                                                                           |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RNF1 | Funziona completamente offline; la rete serve solo per RF3 ed è sempre facoltativa.                                                                                                                                                 |
+| RNF2 | Nessuna autenticazione, nessun dato inviato a server propri; verso Google Books, OPAC SBN e Open Library viaggiano solo l'ISBN o il testo cercato (più la chiave Google, se configurata).                                           |
+| RNF3 | Android 8+ (API 26+); build con EAS Build o `expo run:android`; distribuzione via APK.                                                                                                                                              |
+| RNF4 | Lista fluida con il catalogo reale (verificato su telefono con circa 100 libri: nessun rallentamento). L'obiettivo di 5.000 libri resta un riferimento di progetto, non verificato, perché ritenuto irraggiungibile nell'uso reale. |
+| RNF5 | Migrazioni di schema versionate: aggiornare l'app non perde dati.                                                                                                                                                                   |
+| RNF6 | Lingua interfaccia: italiano; stringhe centralizzate, pronte per i18n.                                                                                                                                                              |
+| RNF7 | Copertine salvate in locale nel file system dell'app, non solo come URL remoto.                                                                                                                                                     |
+| RNF8 | TypeScript strict, lint, test unitari su dominio e repository.                                                                                                                                                                      |
+| RNF9 | Permessi Android: `CAMERA` (scanner e foto della copertina), chiesto al primo uso, più `INTERNET` e `VIBRATE`, che Android concede senza chiedere. Microfono e archivio sono esclusi esplicitamente.                                |
 
 ## 5. User story
 

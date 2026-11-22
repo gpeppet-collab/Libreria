@@ -1,6 +1,6 @@
 # 03 · Interfacce
 
-**Versione documento:** 1.1 (2026-11-14)
+**Versione documento:** 1.2 (2026-11-22)
 I contratti qui descritti esistono come codice in `src/domain`, `src/data` e `src/services`: il codice è la fonte di verità, questo documento ne spiega l'uso.
 
 ## 1. Tipi di dominio (`src/domain/types.ts`)
@@ -217,6 +217,22 @@ Endpoint aggiunti: `https://opac.sbn.it/opacmobilegw/search.json?isbn={isbn}` e 
 
 Componenti nuovi in `src/ui/`: `DateField` (con `datePicker.ts` / `.web.ts`), `SearchResultsList`, sezione Copertina e "I tuoi tag" in `BookForm` / `TagInput`. Hook nuovi: `useMetadataSearch`, `useSetting`, `useTagMutations().create`.
 
+### Aggiornamenti 0.7
+
+```ts
+// domain/classify.ts
+interface ClassificationSuggestion { ageRange: AgeRange | null; bookTypeId: string | null; tags: string[] }
+function suggestClassification(input: { title; description?; categories?; publisher?; pageCount? }, existingTags?): ClassificationSuggestion;
+function extractDeclaredAge(text: string): AgeRange | null;
+function shortenDescription(text, max = 400): string | null;
+
+// services/files/FilePort.ts
+saveToUserFolder(uri, fileName, mimeType): Promise<boolean>; // false se annullato
+
+// services/exportImport/ExportImportService.ts
+exportLibrary({ includeCovers?, destination?: 'share' | 'folder' | 'none', now? }): Promise<{ uri; fileName; books; covers; delivered }>;
+```
+
 ## 5. Formato export/import (`src/domain/export.ts`)
 
 ```ts
@@ -257,28 +273,31 @@ Parametri di navigazione (convertiti da `parseBookQueryParams` / `bookQueryToPar
 
 ## 7. Tracciabilità requisiti → interfacce
 
-| Req      | Dove viene realizzato                                                               |
-| -------- | ----------------------------------------------------------------------------------- |
-| RF1      | `/book/new`, `BookRepository.create`                                                |
-| RF2      | `/scan`, `useScanner`, `normalizeIsbn`                                              |
-| RF3      | `MetadataService.lookup`, provider Google Books / Open Library, `useMetadataLookup` |
-| RF4, RF5 | `Book.status/rating/notes/startedAt/finishedAt`, `/book/[id]`                       |
-| RF6      | `BookQuery`, `BookRepository.findAll`, `/`                                          |
-| RF7      | `BookRepository.update/remove`, `/book/[id]/edit`                                   |
-| RF8      | `LibraryExport`, `exportLibrary`, `/settings`                                       |
-| RF9      | `isLibraryExport`, `BookRepository.bulkUpsert`, `/settings`                         |
-| RF10     | `BookRepository.findByIsbn`, `/scan`, `/book/new`                                   |
-| RF11     | `AgeRange`, `Book.ageRange`, `BookQuery.ageRange`                                   |
-| RF12     | `BookType`, `BookTypeRepository`, `BUILTIN_BOOK_TYPES`, `/settings/types`           |
-| RF13     | `Tag`, `TagRepository`, `normalizeTagName`, `/settings/tags`                        |
-| RF14     | `BookRepository.countBy`, `/groups`                                                 |
-| RF15     | `BookMetadata.suggestedTags`, `/book/new`                                           |
-| RF16     | `MetadataService.searchByText`, `SearchResultsList`, "Cerca per titolo" nel form    |
-| RF17     | `FilePort.pickImage`, `CoverService.storeFromFile`, sezione Copertina del form      |
-| RF18     | `LookupResult.outcomes`, messaggio sotto "Cerca online"                             |
-| RF19     | `SettingsRepository`, `GoogleBooksProvider({ getApiKey })`, `/settings`             |
-| RF20     | `UNSET`, `BookRepository.findAll`, `/groups`, `FilterPanel`                         |
-| RF21     | `TagRepository.ensure`, `/settings/tags`, `TagInput`                                |
-| RF22     | `ThemePreferenceContext`, `SETTING_THEME`, `/settings`                              |
-| RF23     | `DateField`, `domain/dates.ts`                                                      |
-| RNF5     | `MIGRATIONS`, `getDatabase`                                                         |
+| Req      | Dove viene realizzato                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------------------ |
+| RF1      | `/book/new`, `BookRepository.create`                                                                         |
+| RF2      | `/scan`, `useScanner`, `normalizeIsbn`                                                                       |
+| RF3      | `MetadataService.lookup`, provider Google Books / Open Library, `useMetadataLookup`                          |
+| RF4, RF5 | `Book.status/rating/notes/startedAt/finishedAt`, `/book/[id]`                                                |
+| RF6      | `BookQuery`, `BookRepository.findAll`, `/`                                                                   |
+| RF7      | `BookRepository.update/remove`, `/book/[id]/edit`                                                            |
+| RF8      | `LibraryExport`, `exportLibrary`, `/settings`                                                                |
+| RF9      | `isLibraryExport`, `BookRepository.bulkUpsert`, `/settings`                                                  |
+| RF10     | `BookRepository.findByIsbn`, `/scan`, `/book/new`                                                            |
+| RF11     | `AgeRange`, `Book.ageRange`, `BookQuery.ageRange`                                                            |
+| RF12     | `BookType`, `BookTypeRepository`, `BUILTIN_BOOK_TYPES`, `/settings/types`                                    |
+| RF13     | `Tag`, `TagRepository`, `normalizeTagName`, `/settings/tags`                                                 |
+| RF14     | `BookRepository.countBy`, `/groups`                                                                          |
+| RF15     | `BookMetadata.suggestedTags`, `/book/new`                                                                    |
+| RF16     | `MetadataService.searchByText`, `SearchResultsList`, "Cerca per titolo" nel form                             |
+| RF17     | `FilePort.pickImage`, `CoverService.storeFromFile`, sezione Copertina del form                               |
+| RF18     | `LookupResult.outcomes`, messaggio sotto "Cerca online"                                                      |
+| RF19     | `SettingsRepository`, `GoogleBooksProvider({ getApiKey })`, `/settings`                                      |
+| RF20     | `UNSET`, `BookRepository.findAll`, `/groups`, `FilterPanel`                                                  |
+| RF21     | `TagRepository.ensure`, `/settings/tags`, `TagInput`                                                         |
+| RF22     | `ThemePreferenceContext`, `SETTING_THEME`, `/settings`                                                       |
+| RF23     | `DateField`, `domain/dates.ts`                                                                               |
+| RF24     | `suggestClassification`, suggerimenti nella sezione Classificazione del form                                 |
+| RF25     | `FilePort.saveToUserFolder`, `exportLibrary({ destination: 'folder' })`, "Salva sul telefono" in `/settings` |
+| RF26     | `shortenDescription`, estratto `searchInfo.textSnippet` di Google Books                                      |
+| RNF5     | `MIGRATIONS`, `getDatabase`                                                                                  |

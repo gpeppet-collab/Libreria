@@ -40,11 +40,16 @@ npx expo run:android   # build e installazione su dispositivo/emulatore Android
 
 Il progetto usa moduli nativi (fotocamera, SQLite), quindi serve una **development build** (`npx expo run:android` oppure EAS Build); Expo Go può non bastare. Per un APK installabile: `npx eas-cli build -p android --profile preview`.
 
+## Branch
+
+- **`master`**: versione stabile. Da qui si genera l'APK da installare.
+- **`develop`**: sviluppo. Ogni push esegue i controlli automatici; le modifiche passano su `master` con una pull request da `develop`, che esegue gli stessi controlli.
+
 ## Generare l'APK (gratis, anche dal telefono)
 
 Il flusso GitHub Actions `.github/workflows/android-apk.yml` compila l'APK sui server di GitHub, senza EAS né Android Studio:
 
-1. su GitHub apri la scheda **Actions**, scegli **APK Android** e premi **Run workflow**;
+1. su GitHub apri la scheda **Actions**, scegli **APK Android**, premi **Run workflow** e lascia il branch `master` (oppure `develop` per provare una versione in sviluppo);
 2. a esecuzione finita (circa 15-20 minuti) apri l'esecuzione e scarica **libreria-apk** dalla sezione Artifacts;
 3. estrai lo zip e installa il file `.apk`, consentendo l'installazione da origini sconosciute.
 
@@ -63,11 +68,12 @@ Il proxy serve perché expo-sqlite sul web usa SharedArrayBuffer, che richiede l
 
 ## Stato
 
-Versione 0.6.0, in uso su telefono reale.
+Versione 0.7.0, in uso su telefono reale (circa 100 libri).
 
 - **Catalogo**: lista con ricerca, filtri (stato, fascia d'età, tipo, tag, non classificati) e ordinamento; vista per gruppo; dettaglio con cambio rapido di stato e stelle.
 - **Inserimento**: scanner ISBN con controllo duplicati; ricerca online per ISBN o per titolo su Google Books, OPAC SBN e Open Library con esito per fonte; copertina online, da foto o dalla galleria; date dal calendario; tag esistenti selezionabili.
-- **Impostazioni**: export/import JSON, tema chiaro/scuro, chiave Google Books facoltativa, gestione di tag e tipi.
+- **Suggerimenti**: dopo una ricerca online, fascia d'età, tipo e tag proposti da applicare con un tocco.
+- **Impostazioni**: export/import JSON (condivisione o salvataggio in una cartella del telefono), tema chiaro/scuro, chiave Google Books facoltativa, gestione di tag e tipi.
 - **Test**: dominio, dati e servizi su SQLite reale in memoria; componenti e schermate con React Native Testing Library.
 
-Da fare: misura delle prestazioni con migliaia di libri, firma dell'APK con chiave propria per un'eventuale pubblicazione.
+Da fare, solo se servirà: firma dell'APK con chiave propria per un'eventuale pubblicazione.

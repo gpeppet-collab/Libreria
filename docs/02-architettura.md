@@ -1,6 +1,6 @@
 # 02 · Architettura
 
-**Versione documento:** 1.1 (2026-11-14)
+**Versione documento:** 1.2 (2026-11-22)
 Decisioni motivate negli ADR in [docs/adr](adr/).
 
 ## 1. Vista d'insieme
@@ -158,6 +158,14 @@ Tre origini, in ordine di precedenza: immagine scelta dall'utente (fotocamera o 
 
 La tabella `settings` (migrazione 2) conserva chiave Google e tema. Il tema passa da `ThemePreferenceContext` (`src/ui/theme.ts`): `useTheme()` combina la preferenza con il tema di sistema; `expo-system-ui` permette ad Android di seguire il tema del telefono.
 
+### 5.8 Suggerimenti di classificazione (RF24, RF26)
+
+`src/domain/classify.ts` è puro e testato su libri reali del catalogo. `suggestClassification()` sceglie il tipo da parole chiave nel testo (per esempio "pop-up", "atlante", "Ediz. illustrata", "fumetto"), poi dall'editore (editori italiani con catalogo caratterizzato), infine dal numero di pagine; la fascia d'età da un'età dichiarata ("da 5 anni", "da 18 mesi"), altrimenti quella tipica del tipo; i tag da argomenti riconosciuti e dai tag dell'utente presenti nel testo. Le categorie generiche inglesi delle fonti non diventano tag. `shortenDescription()` toglie l'HTML e taglia alle prime frasi entro 400 caratteri.
+
+### 5.9 Export in una cartella (RF25)
+
+`FilePort.saveToUserFolder()` usa il selettore di cartelle di Android (`Directory.pickDirectoryAsync` di expo-file-system), che non richiede permessi di archiviazione. `ExportImportService.exportLibrary({ destination })` accetta `share`, `folder` o `none`.
+
 ## 6. Gestione errori e offline
 
 - Rete: `MetadataService` non lancia mai; restituisce `null` e la UI prosegue in manuale.
@@ -179,7 +187,14 @@ Nessun account, nessun server proprio, nessuna telemetria. Verso Google Books e 
 
 Le immagini in `assets/` sono generate da `scripts/make-icons.js` (disegno SVG rasterizzato): icona, icona adattiva Android (primo piano, sfondo, monocromatica) e logo della schermata di avvio, su fondo arancio `#C2410C`. Per cambiarle si modifica lo script e lo si riesegue.
 
-## 10. Test
+## 10. Branch e rilasci
+
+- `master`: versione stabile, quella da cui si genera l'APK da installare.
+- `develop`: sviluppo; le modifiche arrivano su `master` con una pull request.
+- Il flusso `.github/workflows/ci.yml` esegue typecheck, lint, formattazione e test a ogni push su `develop` e su ogni pull request verso `master`.
+- Il flusso `.github/workflows/android-apk.yml` si avvia a mano scegliendo il branch (di norma `master`).
+
+## 11. Test
 
 | Livello    | Cosa                                      | Strumento                     |
 | ---------- | ----------------------------------------- | ----------------------------- |

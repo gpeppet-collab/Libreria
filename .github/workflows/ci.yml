@@ -1,0 +1,31 @@
+name: Controlli
+
+# Typecheck, lint, formattazione e test a ogni push su develop e su ogni pull request verso master.
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Controlli
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Typecheck, lint, formattazione e test
+        run: npm run check
